@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Buscador Rápido - Sistema de Ventas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Premium -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-bolt lightning"></i>
+                    <h1>Buscador Express DME</h1>
+                </div>
+                <p class="subtitle">Encuentra productos al instante ⚡</p>
+            </div>
+        </header>
+
+        <!-- Búsqueda Ultra Rápida -->
+        <section class="search-section">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" 
+                       placeholder="Escribe código, nombre o descripción..." 
+                       autocomplete="off"
+                       aria-label="Buscar productos">
+                <div class="search-tools">
+                    <button id="clearSearch" class="tool-btn" title="Limpiar búsqueda">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <i class="fas fa-box"></i>
+                    <span id="productCount">Cargando...</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-filter"></i>
+                    <span id="resultsCount"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <div id="loading" class="loading">
+                <div class="pulse-loader">
+                    <div class="pulse-dot"></div>
+                    <div class="pulse-dot"></div>
+                    <div class="pulse-dot"></div>
+                </div>
+                <p><i class="fas fa-sync fa-spin"></i> Cargando productos...</p>
+            </div>
+
+            <div id="resultsContainer" class="results-container" style="display: none;">
+                <!-- Resultados aparecen aquí -->
+            </div>
+
+            <div id="noResults" class="no-results" style="display: none;">
+                <div class="no-results-icon">
+                    <i class="fas fa-search-minus"></i>
+                </div>
+                <h3>No se encontraron productos</h3>
+                <p id="noResultsText"></p>
+                <div class="suggestions-container" id="suggestionsContainer"></div>
+            </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Error de conexión</h3>
+                <p>Intenta recargar la página</p>
+                <button onclick="location.reload()" class="reload-btn">
+                    <i class="fas fa-redo"></i> Recargar
+                </button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p><i class="fas fa-rocket"></i> Sistema de Ventas Rápido - Vende al instante</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
