@@ -25,14 +25,9 @@
             console.log('✅ JS actualizado:', newSrc);
         }
     });
-    
-    // Limpiar cache antiguo si es necesario
-    if (performance.navigation.type === 1) { // Si es recarga
-        console.log('🔄 Página recargada, limpiando cache...');
-    }
 })();
 
-// Buscador Profesional con Sistema de Popularidad Completo
+// Buscador Profesional con Búsqueda Exacta
 class ProductSearch {
     constructor() {
         this.products = [];
@@ -54,6 +49,46 @@ class ProductSearch {
             this.showHomePanel();
         } catch (error) {
             this.showError();
+        }
+    }
+
+    // ===== ALGORITMO DE BÚSQUEDA EXACTA =====
+    normalizeText(text) {
+        return text.toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    // BÚSQUEDA EXACTA MEJORADA
+    searchProducts(text, searchTerm) {
+        const normalizedText = this.normalizeText(text);
+        const searchWords = this.normalizeText(searchTerm).split(/\s+/).filter(w => w.length > 0);
+        
+        // Verificar si hay números en la búsqueda
+        const numberWords = searchWords.filter(word => /\d/.test(word));
+        const textWords = searchWords.filter(word => !/\d/.test(word));
+        
+        // Si hay números, búsqueda ESTRICTA
+        if (numberWords.length > 0) {
+            // DEBE cumplir TODAS las condiciones:
+            // 1. Todos los textos deben coincidir
+            const textMatch = textWords.every(word => normalizedText.includes(word));
+            if (!textMatch) return false;
+            
+            // 2. Todos los números deben coincidir EXACTAMENTE
+            const numberMatch = numberWords.every(number => {
+                // Buscar el número como palabra completa (no como parte de otro número)
+                const numberRegex = new RegExp(`\\b${number}\\b`, 'i');
+                return numberRegex.test(text);
+            });
+            
+            return numberMatch;
+        } else {
+            // Solo texto: búsqueda normal
+            return searchWords.every(word => normalizedText.includes(word));
         }
     }
 
@@ -79,7 +114,6 @@ class ProductSearch {
     recordProductSearch(productCode, searchTerm, source = 'click') {
         if (!productCode) return;
         
-        // Incrementar contador para este producto
         if (!this.searchStats[productCode]) {
             this.searchStats[productCode] = {
                 count: 0,
@@ -92,13 +126,11 @@ class ProductSearch {
         this.searchStats[productCode].count++;
         this.searchStats[productCode].lastSearched = Date.now();
         
-        // Registrar término de búsqueda
         if (searchTerm && !this.searchStats[productCode].searchTerms.includes(searchTerm)) {
             this.searchStats[productCode].searchTerms.unshift(searchTerm);
             this.searchStats[productCode].searchTerms = this.searchStats[productCode].searchTerms.slice(0, 5);
         }
         
-        // Registrar fuente (de dónde vino el click)
         if (!this.searchStats[productCode].sources[source]) {
             this.searchStats[productCode].sources[source] = 0;
         }
@@ -109,7 +141,6 @@ class ProductSearch {
     }
 
     getPopularProducts() {
-        // Convertir estadísticas a array y ordenar por cantidad de búsquedas
         const popularArray = Object.entries(this.searchStats)
             .map(([productCode, stats]) => ({
                 productCode,
@@ -242,13 +273,11 @@ class ProductSearch {
         
         this.search(term, true);
         
-        // Registrar estadística para todos los productos encontrados
         setTimeout(() => {
             this.recordSearchFromRecent(term);
         }, 100);
     }
 
-    // ===== NUEVO: REGISTRAR BÚSQUEDA DESDE RECIENTES =====
     recordSearchFromRecent(searchTerm) {
         const results = this.cache.get(searchTerm);
         if (results && results.size > 0) {
@@ -270,7 +299,6 @@ class ProductSearch {
         
         this.search(term, true);
         
-        // Si tenemos el productCode, registrar la búsqueda
         if (productCode) {
             this.recordProductSearch(productCode, term, 'popular_list');
         }
@@ -423,11 +451,11 @@ class ProductSearch {
             return;
         }
 
-        const words = this.normalizeText(term).split(/\s+/).filter(w => w.length > 1);
         const results = new Map();
 
+        // BÚSQUEDA EXACTA - Usa el algoritmo mejorado
         for (const [code, product] of this.grouped) {
-            if (words.every(word => product.searchText.includes(word))) {
+            if (this.searchProducts(product.searchText, term)) {
                 results.set(code, product);
             }
         }
@@ -482,10 +510,7 @@ class ProductSearch {
     handleProductClick(clickedProduct, searchTerm) {
         console.log(`🖱️ Click en producto: ${clickedProduct.codigo}`);
         
-        // Registrar estadística de búsqueda para este producto
         this.recordProductSearch(clickedProduct.codigo, searchTerm || this.lastSearchTerm, 'result_click');
-        
-        // Actualizar UI de productos populares
         this.updatePopularProductsUI();
         
         if (this.lastSearchTerm && this.lastSearchTerm.trim().length >= 2) {
@@ -526,7 +551,7 @@ class ProductSearch {
                     <div class="product-code">${code}</div>
                     <div class="product-desc">${description}</div>
                 </div>
-                    <div class="variants-list">
+                <div class="variants-list">
                     ${variantsHTML}
                 </div>
             `;
@@ -539,15 +564,6 @@ class ProductSearch {
     }
 
     // ===== MÉTODOS AUXILIARES =====
-    normalizeText(text) {
-        return text.toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-z0-9\s]/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
-    }
-
     formatPrice(price) {
         if (!price || price === '0' || price === '0.00') return '0.00';
         try {
@@ -568,7 +584,7 @@ class ProductSearch {
     highlightMatches(text, term) {
         if (!term || !text) return text || '';
         
-        const words = this.normalizeText(term).split(/\s+/).filter(w => w.length > 1);
+        const words = this.normalizeText(term).split(/\s+/).filter(w => w.length > 0);
         let result = text;
         
         for (const word of words) {
@@ -630,10 +646,8 @@ class ProductSearch {
     }
 }
 
-// Hacerlo global para los onclick
 let productSearch;
 
-// Inicialización
 document.addEventListener('DOMContentLoaded', () => {
     try {
         productSearch = new ProductSearch();
