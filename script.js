@@ -1,3 +1,37 @@
+// ===== LIMPIAR CACHE AL CARGAR =====
+(function() {
+    'use strict';
+    
+    console.log('🔄 Forzando actualización de cache...');
+    
+    // Forzar recarga de CSS
+    const links = document.querySelectorAll('link[rel="stylesheet"]');
+    links.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && href.includes('styles.css')) {
+            const newHref = href.split('?')[0] + '?v=' + Date.now();
+            link.setAttribute('href', newHref);
+            console.log('✅ CSS actualizado:', newHref);
+        }
+    });
+    
+    // Forzar recarga de JS
+    const scripts = document.querySelectorAll('script[src]');
+    scripts.forEach(script => {
+        const src = script.getAttribute('src');
+        if (src && src.includes('script.js')) {
+            const newSrc = src.split('?')[0] + '?v=' + Date.now();
+            script.setAttribute('src', newSrc);
+            console.log('✅ JS actualizado:', newSrc);
+        }
+    });
+    
+    // Limpiar cache antiguo si es necesario
+    if (performance.navigation.type === 1) { // Si es recarga
+        console.log('🔄 Página recargada, limpiando cache...');
+    }
+})();
+
 // Buscador Profesional con Sistema de Popularidad Completo
 class ProductSearch {
     constructor() {
@@ -492,7 +526,7 @@ class ProductSearch {
                     <div class="product-code">${code}</div>
                     <div class="product-desc">${description}</div>
                 </div>
-                <div class="variants-list">
+                    <div class="variants-list">
                     ${variantsHTML}
                 </div>
             `;
@@ -596,8 +630,10 @@ class ProductSearch {
     }
 }
 
+// Hacerlo global para los onclick
 let productSearch;
 
+// Inicialización
 document.addEventListener('DOMContentLoaded', () => {
     try {
         productSearch = new ProductSearch();
