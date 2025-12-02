@@ -27,7 +27,7 @@
     });
 })();
 
-// Buscador Profesional con Búsqueda Exacta
+// Buscador Profesional ULTRA INTUITIVO
 class ProductSearch {
     constructor() {
         this.products = [];
@@ -52,47 +52,146 @@ class ProductSearch {
         }
     }
 
-    // ===== ALGORITMO DE BÚSQUEDA EXACTA =====
-    normalizeText(text) {
-        return text.toLowerCase()
+    // ===== NORMALIZACIÓN MEJORADA =====
+    normalizeText(text, forSearch = false) {
+        if (!text && text !== 0 && text !== '') return '';
+        
+        // Convertir a string
+        let str = String(text);
+        
+        // Minúsculas y quitar acentos
+        str = str.toLowerCase()
             .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/[^a-z0-9\s]/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
+            .replace(/[\u0300-\u036f]/g, "");
+        
+        // Quitar caracteres especiales, mantener solo letras y números
+        str = str.replace(/[^a-z0-9]/g, '');
+        
+        return str;
     }
 
-    // BÚSQUEDA EXACTA MEJORADA
+    // ===== BUSCADOR SUPER INTUITIVO =====
     searchProducts(text, searchTerm) {
+        if (!searchTerm || !text) return false;
+        
+        // Normalizar texto del producto
         const normalizedText = this.normalizeText(text);
-        const searchWords = this.normalizeText(searchTerm).split(/\s+/).filter(w => w.length > 0);
         
-        // Verificar si hay números en la búsqueda
-        const numberWords = searchWords.filter(word => /\d/.test(word));
-        const textWords = searchWords.filter(word => !/\d/.test(word));
+        // Normalizar término de búsqueda
+        const normalizedSearch = this.normalizeText(searchTerm);
         
-        // Si hay números, búsqueda ESTRICTA
-        if (numberWords.length > 0) {
-            // DEBE cumplir TODAS las condiciones:
-            // 1. Todos los textos deben coincidir
-            const textMatch = textWords.every(word => normalizedText.includes(word));
-            if (!textMatch) return false;
-            
-            // 2. Todos los números deben coincidir EXACTAMENTE
-            const numberMatch = numberWords.every(number => {
-                // Buscar el número como palabra completa (no como parte de otro número)
-                const numberRegex = new RegExp(`\\b${number}\\b`, 'i');
-                return numberRegex.test(text);
-            });
-            
-            return numberMatch;
-        } else {
-            // Solo texto: búsqueda normal
-            return searchWords.every(word => normalizedText.includes(word));
+        if (!normalizedSearch || normalizedSearch.length < 1) return false;
+        
+        // ALGORITMO MEJORADO: Porcentaje de coincidencia
+        const searchChars = normalizedSearch.split('');
+        let matches = 0;
+        
+        // Texto temporal para buscar (sin quitar caracteres ya encontrados)
+        let tempText = normalizedText;
+        
+        for (const char of searchChars) {
+            if (tempText.includes(char)) {
+                matches++;
+                // Quitar el carácter encontrado para no contar duplicados
+                tempText = tempText.replace(char, '');
+            }
         }
+        
+        // Calcular porcentaje de coincidencia
+        const matchPercentage = (matches / searchChars.length) * 100;
+        
+        // ACEPTAR si coincide al menos el 60% de los caracteres
+        // Esto permite: "tecn" encuentre "tecnoport" (4/4 = 100%)
+        // Y "tec 1" encuentre "tecnoport120" (t,e,c,1 = 4/4 = 100%)
+        return matchPercentage >= 60;
     }
 
-    // ===== SISTEMA DE ESTADÍSTICAS DE BÚSQUEDAS =====
+    // ===== CÁLCULO DE RELEVANCIA OPTIMIZADO =====
+    calculateRelevanceScore(product, searchTerm) {
+        const normalizedSearch = this.normalizeText(searchTerm);
+        const normalizedCode = this.normalizeText(product.codigo);
+        const normalizedDesc = this.normalizeText(product.descripcion || '');
+        
+        let score = 0;
+        
+        // 1. COINCIDENCIA EXACTA EN EL CÓDIGO
+        if (normalizedCode === normalizedSearch) {
+            score += 200;
+        }
+        
+        // 2. EL CÓDIGO EMPIEZA CON LA BÚSQUEDA
+        if (normalizedCode.startsWith(normalizedSearch)) {
+            score += 150;
+        }
+        
+        // 3. LA BÚSQUEDA ESTÁ EN EL CÓDIGO (como substring)
+        if (normalizedCode.includes(normalizedSearch)) {
+            score += 120;
+        }
+        
+        // 4. LA BÚSQUEDA ESTÁ EN LA DESCRIPCIÓN
+        if (normalizedDesc.includes(normalizedSearch)) {
+            score += 80;
+        }
+        
+        // 5. COINCIDENCIA DE TODOS LOS CARACTERES EN EL CÓDIGO
+        const allCharsInCode = normalizedSearch.split('').every(char => 
+            normalizedCode.includes(char)
+        );
+        if (allCharsInCode) {
+            score += 70;
+        }
+        
+        // 6. COINCIDENCIA DE TODOS LOS CARACTERES EN LA DESCRIPCIÓN
+        const allCharsInDesc = normalizedSearch.split('').every(char => 
+            normalizedDesc.includes(char)
+        );
+        if (allCharsInDesc) {
+            score += 60;
+        }
+        
+        // 7. BONO POR PRODUCTOS POPULARES
+        const stats = this.searchStats[product.codigo];
+        if (stats && stats.count) {
+            score += Math.min(stats.count * 2, 30);
+        }
+        
+        // 8. BONO POR BÚSQUEDAS RECIENTES
+        if (stats && stats.lastSearched) {
+            const daysAgo = (Date.now() - stats.lastSearched) / (1000 * 60 * 60 * 24);
+            if (daysAgo < 7) {
+                score += 20;
+            }
+        }
+        
+        // 9. BONO ESPECIAL PARA NÚMEROS
+        const searchNumbers = normalizedSearch.split('').filter(ch => /\d/.test(ch));
+        if (searchNumbers.length > 0) {
+            let numberBonus = 0;
+            for (const numChar of searchNumbers) {
+                if (normalizedCode.includes(numChar)) numberBonus += 15;
+                if (normalizedDesc.includes(numChar)) numberBonus += 10;
+            }
+            score += numberBonus;
+        }
+        
+        // 10. BONO POR COINCIDENCIA DE 3+ LETRAS CONSECUTIVAS
+        if (normalizedSearch.length >= 3) {
+            for (let i = 0; i <= normalizedSearch.length - 3; i++) {
+                const threeLetters = normalizedSearch.substring(i, i + 3);
+                if (normalizedCode.includes(threeLetters)) {
+                    score += 40;
+                }
+                if (normalizedDesc.includes(threeLetters)) {
+                    score += 20;
+                }
+            }
+        }
+        
+        return score;
+    }
+
+    // ===== SISTEMA DE ESTADÍSTICAS =====
     loadSearchStats() {
         try {
             const stored = localStorage.getItem('searchStats');
@@ -198,7 +297,7 @@ class ProductSearch {
         }).join('');
     }
 
-    // ===== GESTIÓN DE BÚSQUEDAS RECIENTES =====
+    // ===== BÚSQUEDAS RECIENTES =====
     loadRecentSearches() {
         try {
             const stored = localStorage.getItem('recentSearches');
@@ -257,8 +356,9 @@ class ProductSearch {
     }
 
     escapeHTML(text) {
+        if (!text && text !== 0) return '';
         const div = document.createElement('div');
-        div.textContent = text;
+        div.textContent = text.toString();
         return div.innerHTML;
     }
 
@@ -329,7 +429,7 @@ class ProductSearch {
         if (homePanel) homePanel.style.display = 'none';
     }
 
-    // ===== BÚSQUEDA PRINCIPAL =====
+    // ===== CARGA DE PRODUCTOS =====
     async loadProducts() {
         const startTime = performance.now();
         
@@ -358,7 +458,10 @@ class ProductSearch {
                 this.grouped.set(code, {
                     codigo: code,
                     descripcion: product.descripcion || '',
-                    searchText: this.normalizeText(`${code} ${product.descripcion || ''}`),
+                    searchText: (code + (product.descripcion || '')).toLowerCase()
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[^a-z0-9]/g, ''),
                     variantes: []
                 });
             }
@@ -374,6 +477,7 @@ class ProductSearch {
         console.log(`📦 Productos agrupados: ${this.grouped.size} grupos`);
     }
 
+    // ===== CONFIGURACIÓN DE BÚSQUEDA =====
     setupSearch() {
         const input = document.getElementById('searchInput');
         const clear = document.getElementById('clearSearch');
@@ -445,6 +549,11 @@ class ProductSearch {
             return;
         }
 
+        // Limitar términos muy largos
+        if (term.length > 100) {
+            term = term.substring(0, 100);
+        }
+
         if (this.cache.has(term)) {
             console.log(`⚡ Usando cache para: "${term}"`);
             this.displayResults(this.cache.get(term), term);
@@ -452,12 +561,26 @@ class ProductSearch {
         }
 
         const results = new Map();
+        const scoredResults = [];
 
-        // BÚSQUEDA EXACTA - Usa el algoritmo mejorado
+        // BUSCAR PRODUCTOS
         for (const [code, product] of this.grouped) {
             if (this.searchProducts(product.searchText, term)) {
-                results.set(code, product);
+                const score = this.calculateRelevanceScore(product, term);
+                scoredResults.push({
+                    product,
+                    score,
+                    code
+                });
             }
+        }
+
+        // ORDENAR POR RELEVANCIA
+        scoredResults.sort((a, b) => b.score - a.score);
+        
+        // AGREGAR AL MAPA ORDENADO
+        for (const item of scoredResults) {
+            results.set(item.code, item.product);
         }
 
         this.cache.set(term, results);
@@ -465,6 +588,14 @@ class ProductSearch {
         
         const searchTime = performance.now() - startTime;
         console.log(`🔍 "${term}": ${results.size} resultados en ${searchTime.toFixed(0)}ms`);
+        
+        // DEBUG: Mostrar top 3
+        if (scoredResults.length > 0) {
+            console.log('🏆 Top 3 resultados:');
+            scoredResults.slice(0, 3).forEach((item, i) => {
+                console.log(`${i+1}. ${item.code} - Puntaje: ${item.score}`);
+            });
+        }
     }
 
     displayResults(results, term = '') {
@@ -506,7 +637,7 @@ class ProductSearch {
         console.log(`🎨 Renderizados ${rendered} productos`);
     }
 
-    // ===== GUARDAR AL HACER CLICK EN PRODUCTOS =====
+    // ===== CLICK EN PRODUCTOS =====
     handleProductClick(clickedProduct, searchTerm) {
         console.log(`🖱️ Click en producto: ${clickedProduct.codigo}`);
         
@@ -528,8 +659,8 @@ class ProductSearch {
                 this.handleProductClick(product, term);
             });
             
-            const description = this.highlightMatches(product.descripcion || '', term);
-            const code = this.highlightMatches(product.codigo || '', term);
+            const description = this.safeHighlightMatches(product.descripcion || '', term);
+            const code = this.safeHighlightMatches(product.codigo || '', term);
 
             let variantsHTML = '';
             if (product.variantes && product.variantes.length > 0) {
@@ -563,7 +694,7 @@ class ProductSearch {
         }
     }
 
-    // ===== MÉTODOS AUXILIARES =====
+    // ===== MÉTODOS AUXILIARES SEGUROS =====
     formatPrice(price) {
         if (!price || price === '0' || price === '0.00') return '0.00';
         try {
@@ -581,26 +712,70 @@ class ProductSearch {
         }
     }
 
-    highlightMatches(text, term) {
-        if (!term || !text) return text || '';
+    escapeRegex(text) {
+        if (!text) return '';
+        return text.toString().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // ===== HIGHLIGHT INTELIGENTE QUE SIEMPRE RESALTA =====
+    safeHighlightMatches(text, term) {
+        if (!text) return '';
+        if (!term || term.trim().length === 0) return this.escapeHTML(text);
         
-        const words = this.normalizeText(term).split(/\s+/).filter(w => w.length > 0);
-        let result = text;
+        const escapedText = this.escapeHTML(text);
         
-        for (const word of words) {
-            try {
-                const regex = new RegExp(`(${this.escapeRegex(word)})`, 'gi');
-                result = result.replace(regex, '<mark class="highlight">$1</mark>');
-            } catch (error) {
-                console.error('Error en highlight:', error);
+        // Crear versión del texto sin HTML para búsqueda
+        const plainText = escapedText
+            .replace(/&[a-z]+;/g, ' ') // Reemplazar entidades HTML por espacios
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+        
+        const searchWords = term.toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .split(/\s+/)
+            .filter(word => word.length >= 1);
+        
+        if (searchWords.length === 0) return escapedText;
+        
+        // Usar un array para reconstruir el resultado
+        const chars = escapedText.split('');
+        const highlightMap = new Array(chars.length).fill(false);
+        
+        // Marcar caracteres a resaltar
+        for (const searchWord of searchWords) {
+            let pos = plainText.indexOf(searchWord);
+            while (pos !== -1) {
+                for (let i = 0; i < searchWord.length; i++) {
+                    if (pos + i < highlightMap.length) {
+                        highlightMap[pos + i] = true;
+                    }
+                }
+                pos = plainText.indexOf(searchWord, pos + 1);
+            }
+        }
+        
+        // Reconstruir el resultado
+        let result = '';
+        let i = 0;
+        
+        while (i < chars.length) {
+            if (highlightMap[i]) {
+                // Inicio de un segmento a resaltar
+                let segment = '';
+                while (i < chars.length && highlightMap[i]) {
+                    segment += chars[i];
+                    i++;
+                }
+                result += `<mark class="highlight">${segment}</mark>`;
+            } else {
+                result += chars[i];
+                i++;
             }
         }
         
         return result;
-    }
-
-    escapeRegex(text) {
-        return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     updateStats() {
