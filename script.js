@@ -70,40 +70,31 @@ class ProductSearch {
         return str;
     }
 
-    // ===== BUSCADOR SUPER INTUITIVO =====
+    // ===== BUSCADOR POR PALABRAS COMPLETAS =====
     searchProducts(text, searchTerm) {
         if (!searchTerm || !text) return false;
         
         // Normalizar texto del producto
         const normalizedText = this.normalizeText(text);
         
-        // Normalizar término de búsqueda
-        const normalizedSearch = this.normalizeText(searchTerm);
+        // Separar término en PALABRAS COMPLETAS
+        const searchWords = searchTerm.toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .split(/\s+/)  // Separar por espacios
+            .filter(word => word.length >= 1);
         
-        if (!normalizedSearch || normalizedSearch.length < 1) return false;
+        if (searchWords.length === 0) return false;
         
-        // ALGORITMO MEJORADO: Porcentaje de coincidencia
-        const searchChars = normalizedSearch.split('');
-        let matches = 0;
-        
-        // Texto temporal para buscar (sin quitar caracteres ya encontrados)
-        let tempText = normalizedText;
-        
-        for (const char of searchChars) {
-            if (tempText.includes(char)) {
-                matches++;
-                // Quitar el carácter encontrado para no contar duplicados
-                tempText = tempText.replace(char, '');
+        // Verificar que TODAS las palabras estén presentes
+        for (const word of searchWords) {
+            // Buscar la palabra como SUBSTRING (no solo caracteres sueltos)
+            if (!normalizedText.includes(word)) {
+                return false; // Si falta UNA palabra, no mostrar
             }
         }
         
-        // Calcular porcentaje de coincidencia
-        const matchPercentage = (matches / searchChars.length) * 100;
-        
-        // ACEPTAR si coincide al menos el 60% de los caracteres
-        // Esto permite: "tecn" encuentre "tecnoport" (4/4 = 100%)
-        // Y "tec 1" encuentre "tecnoport120" (t,e,c,1 = 4/4 = 100%)
-        return matchPercentage >= 60;
+        return true; // TODAS las palabras están presentes
     }
 
     // ===== CÁLCULO DE RELEVANCIA OPTIMIZADO =====
@@ -717,20 +708,19 @@ class ProductSearch {
         return text.toString().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    // ===== HIGHLIGHT INTELIGENTE QUE SIEMPRE RESALTA =====
+    // ===== HIGHLIGHT POR PALABRAS COMPLETAS =====
     safeHighlightMatches(text, term) {
         if (!text) return '';
         if (!term || term.trim().length === 0) return this.escapeHTML(text);
         
         const escapedText = this.escapeHTML(text);
         
-        // Crear versión del texto sin HTML para búsqueda
-        const plainText = escapedText
-            .replace(/&[a-z]+;/g, ' ') // Reemplazar entidades HTML por espacios
-            .toLowerCase()
+        // Crear versión NORMALIZADA para búsqueda exacta
+        const plainText = escapedText.toLowerCase()
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "");
         
+        // Separar término en PALABRAS
         const searchWords = term.toLowerCase()
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
@@ -739,30 +729,40 @@ class ProductSearch {
         
         if (searchWords.length === 0) return escapedText;
         
-        // Usar un array para reconstruir el resultado
         const chars = escapedText.split('');
         const highlightMap = new Array(chars.length).fill(false);
         
-        // Marcar caracteres a resaltar
+        // Para CADA palabra de búsqueda
         for (const searchWord of searchWords) {
-            let pos = plainText.indexOf(searchWord);
-            while (pos !== -1) {
+            if (searchWord.length === 0) continue;
+            
+            // Buscar TODAS las ocurrencias de esta palabra
+            let startPos = 0;
+            
+            while (true) {
+                // Buscar la palabra en el texto normalizado
+                const foundPos = plainText.indexOf(searchWord, startPos);
+                if (foundPos === -1) break;
+                
+                // Marcar TODOS los caracteres de esta palabra
                 for (let i = 0; i < searchWord.length; i++) {
-                    if (pos + i < highlightMap.length) {
-                        highlightMap[pos + i] = true;
+                    const actualPos = foundPos + i;
+                    if (actualPos < highlightMap.length) {
+                        highlightMap[actualPos] = true;
                     }
                 }
-                pos = plainText.indexOf(searchWord, pos + 1);
+                
+                // Continuar buscando después de esta ocurrencia
+                startPos = foundPos + 1;
             }
         }
         
-        // Reconstruir el resultado
+        // Reconstruir el resultado con highlights
         let result = '';
         let i = 0;
         
         while (i < chars.length) {
             if (highlightMap[i]) {
-                // Inicio de un segmento a resaltar
                 let segment = '';
                 while (i < chars.length && highlightMap[i]) {
                     segment += chars[i];
