@@ -823,12 +823,77 @@ class ProductSearch {
 
 let productSearch;
 
+// ===== INICIALIZACIÓN CON COBERTURA TOTAL =====
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Remover clase no-js (para navegadores con JS)
+    document.documentElement.classList.remove('no-js');
+    
+    // 2. Fallback de seguridad: si CSS no cargó en 2 segundos, forzar
+    const cssFallbackTimer = setTimeout(() => {
+        const appElement = document.querySelector('.app');
+        if (appElement && !appElement.classList.contains('css-loaded')) {
+            console.log('⏱️  Fallback CSS: Forzando visibilidad después de timeout');
+            appElement.classList.add('css-loaded');
+        }
+    }, 2000);
+    
+    // 3. Inicializar buscador
     try {
         productSearch = new ProductSearch();
+        
+        // 4. Cuando el buscador termine de inicializar
+        // Sobreescribimos el método init para capturar cuando termina
+        const originalInit = productSearch.init;
+        productSearch.init = async function() {
+            try {
+                await originalInit.call(this);
+                
+                // 5. Asegurar que CSS está cargado
+                const appElement = document.querySelector('.app');
+                if (appElement && !appElement.classList.contains('css-loaded')) {
+                    appElement.classList.add('css-loaded');
+                }
+                
+                // 6. Limpiar timer de fallback
+                clearTimeout(cssFallbackTimer);
+                
+                console.log('✅ Sistema inicializado con cobertura total contra flash');
+            } catch (error) {
+                // 7. En caso de error, igual mostrar la app
+                const appElement = document.querySelector('.app');
+                if (appElement) {
+                    appElement.classList.add('css-loaded');
+                }
+                clearTimeout(cssFallbackTimer);
+                throw error;
+            }
+        };
+        
+        // Iniciar
+        productSearch.init();
+        
     } catch (error) {
         console.error('💥 Error crítico al inicializar:', error);
+        
+        // 8. Aún con error, mostrar la app
+        const appElement = document.querySelector('.app');
+        if (appElement) {
+            appElement.classList.add('css-loaded');
+        }
+        clearTimeout(cssFallbackTimer);
+        
         const errorElement = document.getElementById('errorMessage');
         if (errorElement) errorElement.style.display = 'flex';
     }
+});
+
+// 9. Fallback adicional: si window.load se dispara y aún no se mostró
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        const appElement = document.querySelector('.app');
+        if (appElement && !appElement.classList.contains('css-loaded')) {
+            console.log('🌅 Fallback window.load: Mostrando app');
+            appElement.classList.add('css-loaded');
+        }
+    }, 100);
 });
