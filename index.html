@@ -42,16 +42,16 @@
     </style>
 
     <!-- Preload para navegadores modernos -->
-    <link rel="preload" href="styles.css?v=3.0" as="style"
+    <link rel="preload" href="styles.css?v=4.0" as="style"
         onload="this.onload=null;this.rel='stylesheet';document.querySelector('.app').classList.add('css-loaded')">
 
     <!-- Fallback para navegadores que no soportan preload -->
-    <link rel="stylesheet" href="styles.css?v=3.0" media="print"
+    <link rel="stylesheet" href="styles.css?v=4.0" media="print"
         onload="this.media='all';this.onload=null;if(!document.querySelector('.app').classList.contains('css-loaded'))document.querySelector('.app').classList.add('css-loaded')">
 
     <!-- Fallback para navegadores sin JavaScript -->
     <noscript>
-        <link rel="stylesheet" href="styles.css?v=3.0">
+        <link rel="stylesheet" href="styles.css?v=4.0">
         <style>
             .app {
                 opacity: 1 !important;
@@ -65,9 +65,9 @@
     </noscript>
     <!-- ===== FIN SOLUCIÓN DEFINITIVA ===== -->
     <!-- ↓↓↓ AQUÍ ESTÁ EL CAMBIO PRECISO ↓↓↓ -->
-    <link rel="preload" href="styles.css?v=3.0" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="styles.css?v=4.0" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
-        <link rel="stylesheet" href="styles.css?v=3.0">
+        <link rel="stylesheet" href="styles.css?v=4.0">
     </noscript>
     <!-- ↑↑↑ AQUÍ TERMINA EL CAMBIO ↑↑↑ -->
 </head>
@@ -154,8 +154,8 @@
 
 
     <!-- ===== SISTEMA DE SEGURIDAD ===== -->
-    <script src="auth.js?v=1.0"></script>
-    <script src="script.js?v=3.0"></script> <!-- ← Agrega versión -->
+    <script src="auth.js?v=4.0"></script>
+    <script src="script.js?v=4.0"></script> <!-- ← Agrega versión -->
 </body>
 
 </html>
