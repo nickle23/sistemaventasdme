@@ -77,6 +77,63 @@ class AuthSystem {
 
         // Disparar evento personalizado
         window.dispatchEvent(new CustomEvent('auth-success', { detail: user }));
+
+        // ACTIVAR SEGURIDAD VISUAL
+        this.enableVisualSecurity(user);
+    }
+
+    enableVisualSecurity(user) {
+        console.log('🛡️ Seguridad Visual Activada');
+
+        // 1. MARCA DE AGUA (WATERMARK)
+        const watermarkContainer = document.createElement('div');
+        watermarkContainer.className = 'security-watermark';
+
+        // Crear muchas copias del ID para llenar la pantalla
+        const idText = `${user.id} • `;
+        // Calculamos cuántos entran aprox en pantalla
+        const totalItems = 150;
+
+        let html = '';
+        for (let i = 0; i < totalItems; i++) {
+            html += `<span>${idText}</span>`;
+        }
+        watermarkContainer.innerHTML = html;
+        document.body.appendChild(watermarkContainer);
+
+        // 2. CORTINA DE PRIVACIDAD
+        const curtain = document.createElement('div');
+        curtain.className = 'security-curtain';
+        curtain.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        document.body.appendChild(curtain);
+
+        // 3. EVENTOS DE PROTECCIÓN
+
+        // Al perder el foco (Tab, cambiar ventana, abrir recortes)
+        window.addEventListener('blur', () => {
+            curtain.style.display = 'flex';
+            document.title = '🔒 Protegido';
+        });
+
+        // Al recuperar el foco
+        window.addEventListener('focus', () => {
+            curtain.style.display = 'none';
+            document.title = 'BUSCADOR DME';
+        });
+
+        // Detectar Tecla PrintScreen
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'PrintScreen') {
+                curtain.style.display = 'flex';
+                // Copiar algo inútil al portapapeles para "borrar" la captura
+                navigator.clipboard.writeText('⚠️ PROHIBIDO CAPTURAR PANTALLA - ACCESO REGISTRADO');
+
+                setTimeout(() => {
+                    alert('⚠️ ATENCIÓN: La captura de pantalla está monitoreada y prohibida.');
+                    curtain.style.display = 'none';
+                }, 500);
+            }
+        });
     }
 
     denyAccess(isBanned = false) {
