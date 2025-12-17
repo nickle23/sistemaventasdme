@@ -7,6 +7,15 @@ from watchdog.events import FileSystemEventHandler
 import subprocess
 import shutil
 
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+import base64
+try:
+    from secret import SECRET_KEY
+except ImportError:
+    SECRET_KEY = "MundoEscolar$2025_Seguro"
+
 class ManejadorExcel(FileSystemEventHandler):
     def __init__(self, sincronizador):
         self.sincronizador = sincronizador
@@ -36,8 +45,19 @@ class SincronizadorGitHub:
             os.makedirs(self.carpeta_excel)
             print(f"✅ Carpeta '{self.carpeta_excel}/' creada")
     
+    def encriptar_datos(self, data_json):
+        """Encripta el string JSON usando AES"""
+        key = SECRET_KEY.encode('utf-8')
+        # Asegurar que la clave sea de 16, 24 o 32 bytes (completar o recortar)
+        key = key[:32].ljust(32, b'\0') 
+        
+        cipher = AES.new(key, AES.MODE_ECB)
+        data_bytes = data_json.encode('utf-8')
+        encrypted = cipher.encrypt(pad(data_bytes, AES.block_size))
+        return base64.b64encode(encrypted).decode('utf-8')
+
     def convertir_excel_a_json(self, ruta_excel):
-        """Convierte Excel a JSON optimizado"""
+        """Convierte Excel a JSON ENCRIPTADO"""
         try:
             print("📖 Leyendo archivo Excel...")
             df = pd.read_excel(ruta_excel)
@@ -55,11 +75,18 @@ class SincronizadorGitHub:
                 }
                 productos.append(producto)
             
-            # Guardar JSON
-            with open(self.archivo_json, 'w', encoding='utf-8') as f:
-                json.dump(productos, f, ensure_ascii=False, indent=2)
+            # Convertir a String JSON
+            json_str = json.dumps(productos, ensure_ascii=False)
             
-            print(f"✅ JSON actualizado: {len(productos)} productos")
+            # ENCRIPTAR
+            print("🔒 Encriptando datos con AES-256...")
+            contenido_seguro = self.encriptar_datos(json_str)
+            
+            # Guardar archivo encriptado (aunque se llame .json es texto cifrado)
+            with open(self.archivo_json, 'w', encoding='utf-8') as f:
+                f.write(contenido_seguro)
+            
+            print(f"✅ JSON DE SEGURIDAD generado: {len(productos)} productos protegidos")
             return True
             
         except Exception as e:
@@ -100,10 +127,10 @@ class SincronizadorGitHub:
         return True
     
     def procesar_excel(self, ruta_excel):
-        """Procesa completo: Excel → JSON → GitHub"""
+        """Procesa completo: Excel → JSON Encriptado → GitHub"""
         print("🔄 Iniciando procesamiento automático...")
         
-        # 1. Convertir Excel a JSON
+        # 1. Convertir Excel a JSON Encriptado
         if not self.convertir_excel_a_json(ruta_excel):
             return
         
@@ -118,18 +145,19 @@ class SincronizadorGitHub:
             print(f"⚠️ No se pudo respaldar Excel: {e}")
         
         # 3. Subir a GitHub
-        self.subir_a_github()
+        # self.subir_a_github() # Comentado a petición del usuario
+        print("⚠️ SUBIDA AUTOMÁTICA DESACTIVADA (Modo Manual)")
         
-        print("🎯 Proceso completado - Tu buscador online está actualizado!")
+        print("🎯 Proceso completado - Datos Protegidos!")
         print("=" * 60)
     
     def iniciar_vigilancia(self):
         """Inicia la vigilancia automática"""
-        print("🚀 SISTEMA DE SINCRONIZACIÓN AUTOMÁTICA")
+        print("🚀 SISTEMA DE SINCRONIZACIÓN AUTOMÁTICA (MODO SEGURO)")
         print("=" * 60)
         print("📁 Coloca tu Excel en esta carpeta")
         print("👀 El sistema detectará cambios automáticamente")
-        print("🌐 Los cambios se subirán automáticamente a GitHub")
+        print("🔒 Tus datos serán ENCRIPTADOS antes de guardarse")
         print("💡 Presiona Ctrl+C para detener")
         print("=" * 60)
         

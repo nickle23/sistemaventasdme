@@ -421,17 +421,41 @@ class ProductSearch {
     }
 
     // ===== CARGA DE PRODUCTOS =====
+    // ===== CARGA DE PRODUCTOS =====
     async loadProducts() {
         const startTime = performance.now();
 
         try {
-            const response = await fetch('./productos.json');
+            // 1. Cargar archivo (ahora viene encriptado como texto plano)
+            const response = await fetch('./productos.json?v=' + Date.now()); // No caché
             if (!response.ok) throw new Error('Error HTTP');
 
-            this.products = await response.json();
+            const encryptedData = await response.text();
+
+            // 2. Desencriptar
+            try {
+                // La clave debe coincidir exactamente con la de Python (32 chars)
+                const SECRET_KEY = "MundoEscolar$2025_Seguro"; // Clave pública en código (ofuscable)
+                const key = CryptoJS.enc.Utf8.parse(SECRET_KEY.padEnd(32, '\0'));
+
+                const decrypted = CryptoJS.AES.decrypt(encryptedData, key, {
+                    mode: CryptoJS.mode.ECB,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+
+                const jsonString = decrypted.toString(CryptoJS.enc.Utf8);
+
+                if (!jsonString) throw new Error("Fallo de desencriptación (clave incorrecta o archivo dañado)");
+
+                this.products = JSON.parse(jsonString);
+
+            } catch (cryptoError) {
+                console.error("🔐 Error de seguridad:", cryptoError);
+                throw new Error("No se pudo desencriptar la base de datos.");
+            }
 
             const loadTime = performance.now() - startTime;
-            console.log(`✅ ${this.products.length} productos cargados en ${loadTime.toFixed(0)}ms`);
+            console.log(`✅ ${this.products.length} productos cargados y desencriptados en ${loadTime.toFixed(0)}ms`);
 
         } catch (error) {
             console.error('❌ Error cargando productos:', error);

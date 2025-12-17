@@ -33,17 +33,23 @@ class AuthSystem {
             // Usamos timestamp para evitar caché del JSON
             const response = await fetch(`usuarios.json?v=${Date.now()}`);
             if (!response.ok) throw new Error('No se pudo cargar la base de datos de usuarios');
-            
+
             const data = await response.json();
             const validUsers = data.users || [];
 
             // Buscar si mi ID está en la lista
             const user = validUsers.find(u => u.id === this.deviceId);
 
-            if (user && user.active !== false) {
-                this.permitAccess(user);
+            if (user) {
+                if (user.active !== false) {
+                    this.permitAccess(user);
+                } else {
+                    // Está en la lista pero Desactivado (BANEADO)
+                    this.denyAccess(true);
+                }
             } else {
-                this.denyAccess();
+                // No está en la lista (USUARIO NUEVO)
+                this.denyAccess(false);
             }
 
         } catch (error) {
@@ -58,35 +64,62 @@ class AuthSystem {
         this.authorized = true;
         this.currentUser = user;
         console.log(`✅ Bienvenido ${user.name}`);
-        
+
         // Quitar pantalla de bloqueo si existe
         const lockScreen = document.getElementById('lockScreen');
         if (lockScreen) {
             lockScreen.style.opacity = '0';
             setTimeout(() => lockScreen.remove(), 500);
         }
-        
+
         // Mostrar la app principal
         document.querySelector('.app').style.filter = 'none';
-        
+
         // Disparar evento personalizado
         window.dispatchEvent(new CustomEvent('auth-success', { detail: user }));
     }
 
-    denyAccess() {
+    denyAccess(isBanned = false) {
         this.authorized = false;
         console.log('⛔ Acceso denegado. ID:', this.deviceId);
-        
-        this.showLockScreen();
+
+        this.showLockScreen(isBanned);
     }
 
-    showLockScreen() {
-        if (document.getElementById('lockScreen')) return;
+    showLockScreen(isBanned) {
+        if (document.getElementById('lockScreen')) {
+            // Si ya existe pero cambia el estado a baneado, actualizar
+            if (isBanned) {
+                document.querySelector('#lockScreen h2').textContent = 'Cuenta Suspendida';
+                document.querySelector('#lockScreen p').textContent = 'Tu acceso ha sido revocado temporalmente.';
+                document.querySelector('.lock-icon i').className = 'fas fa-ban';
+                document.querySelector('.instructions').style.display = 'none';
+                document.querySelector('.code-box').style.display = 'none';
+            }
+            return;
+        }
 
         const overlay = document.createElement('div');
         overlay.id = 'lockScreen';
-        overlay.innerHTML = `
-            <div class="lock-container">
+
+        let contentHTML = '';
+
+        if (isBanned) {
+            contentHTML = `
+                <div class="lock-icon">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+                <h2>Cuenta Suspendida</h2>
+                <p>Tu acceso ha sido revocado temporalmente por el administrador.</p>
+                <div style="background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 10px; border-radius: 8px; margin: 20px 0; font-size: 13px;">
+                    <i class="fas fa-info-circle"></i> Contacta a soporte si crees que es un error.
+                </div>
+                <button onclick="location.reload()" class="btn-reload">
+                    <i class="fas fa-sync-alt"></i> Verificar nuevamente
+                </button>
+            `;
+        } else {
+            contentHTML = `
                 <div class="lock-icon">
                     <i class="fas fa-lock"></i>
                 </div>
@@ -104,15 +137,17 @@ class AuthSystem {
 
                 <div class="instructions">
                     <p>1. Copia tu código.</p>
-                    <p>2. Envíalo al administrador para solicitar acceso.</p>
+                    <p>2. Envíalo a <b>Nixon</b> para solicitar acceso.</p>
                     <p>3. Una vez autorizado, recarga esta página.</p>
                 </div>
 
                 <button onclick="location.reload()" class="btn-reload">
                     <i class="fas fa-sync-alt"></i> Ya me autorizaron, recargar
                 </button>
-            </div>
-        `;
+            `;
+        }
+
+        overlay.innerHTML = `<div class="lock-container">${contentHTML}</div>`;
 
         // Estilos Inline críticos para asegurar que se vea
         const style = document.createElement('style');
@@ -198,7 +233,8 @@ class AuthSystem {
                 border-radius: 8px;
                 font-size: 16px;
                 cursor: pointer;
-                width: 100%;
+                width: 90%;
+                margin: 0 auto;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -208,10 +244,10 @@ class AuthSystem {
 
             .btn-reload:hover { background: #1d4ed8; }
         `;
-        
+
         document.head.appendChild(style);
         document.body.appendChild(overlay);
-        
+
         // Bloquear scroll del body
         document.body.style.overflow = 'hidden';
     }
@@ -222,7 +258,7 @@ class AuthSystem {
             const originalColor = display.style.color;
             display.style.color = '#4ade80'; // Verde éxito
             display.innerHTML = `¡COPIADO! <i class="fas fa-check"></i>`;
-            
+
             setTimeout(() => {
                 display.style.color = ''; // Restaurar
                 display.innerHTML = `${this.deviceId} <i class="fas fa-copy copy-icon"></i>`;
