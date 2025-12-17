@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUSCADOR DME</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- ===== SOLUCIÓN DEFINITIVA CONTRA FLASH ===== -->
+    <style>
+    /* Estilos críticos que se cargan INMEDIATAMENTE */
+    body { 
+        background: #f8fafc !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 100vh !important;
+        font-family: system-ui, -apple-system, sans-serif !important;
+    }
+    
+    /* Oculta la app hasta que CSS completo cargue */
+    .app { 
+        opacity: 0 !important;
+        visibility: hidden !important;
+        visibility: hidden !important;
+        transition: opacity 0.3s ease-in !important;
+        filter: blur(15px); /* BLUR INICIAL DE SEGURIDAD */
+    }
+    
+    /* Cuando CSS cargue, mostrar suavemente */
+    .app.css-loaded { 
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    /* Para navegadores sin JS - mostrar inmediatamente */
+    .no-js .app {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    </style>
+    
+    <!-- Preload para navegadores modernos -->
+    <link rel="preload" href="styles.css?v=3.0" as="style" 
+          onload="this.onload=null;this.rel='stylesheet';document.querySelector('.app').classList.add('css-loaded')">
+    
+    <!-- Fallback para navegadores que no soportan preload -->
+    <link rel="stylesheet" href="styles.css?v=3.0" media="print" 
+          onload="this.media='all';this.onload=null;if(!document.querySelector('.app').classList.contains('css-loaded'))document.querySelector('.app').classList.add('css-loaded')">
+    
+    <!-- Fallback para navegadores sin JavaScript -->
+    <noscript>
+        <link rel="stylesheet" href="styles.css?v=3.0">
+        <style>
+            .app { opacity: 1 !important; visibility: visible !important; }
+            body { background: #f8fafc; }
+        </style>
+    </noscript>
+    <!-- ===== FIN SOLUCIÓN DEFINITIVA ===== -->
+    <!-- ↓↓↓ AQUÍ ESTÁ EL CAMBIO PRECISO ↓↓↓ -->
+    <link rel="preload" href="styles.css?v=3.0" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="styles.css?v=3.0"></noscript>
+    <!-- ↑↑↑ AQUÍ TERMINA EL CAMBIO ↑↑↑ -->
+</head>
+<body>
+    <div class="app">
+        <!-- Header Super Compacto -->
+        <header class="header">
+            <div class="header-content">
+                <div class="brand">
+                    <i class="fas fa-search"></i>
+                    <span class="brand-text">PRODUCTOS MUNDO ESCOLAR</span>
+                </div>
+                <div class="product-count" id="productCount">0</div>
+            </div>
+        </header>
+
+        <!-- Búsqueda Compacta -->
+        <section class="search-section">
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" 
+                           id="searchInput" 
+                           placeholder="Busca tu producto..."
+                           autocomplete="off">
+                    <button id="clearSearch" class="clear-btn" style="display: none;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <div id="resultsCount" class="results-count"></div>
+
+            <!-- Estados -->
+            <div id="loading" class="state">
+                <div class="spinner"></div>
+                <p>Cargando productos...</p>
+            </div>
+
+            <!-- Panel de Inicio - Búsquedas Recientes y Populares -->
+            <div id="homePanel" class="home-panel">
+                <div class="suggestions-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-clock"></i>
+                        Búsquedas Recientes
+                    </h3>
+                    <div id="recentSearches" class="suggestions-grid">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="suggestions-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        Productos Populares
+                    </h3>
+                    <div id="popularProducts" class="suggestions-grid">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultados de Búsqueda -->
+            <div id="resultsContainer" class="results-grid" style="display: none;">
+                <!-- Resultados dinámicos -->
+            </div>
+
+            <!-- Sin resultados -->
+            <div id="noResults" class="state" style="display: none;">
+                <i class="fas fa-search"></i>
+                <p>No se encontraron productos</p>
+                <small id="noResultsText"></small>
+                <div class="suggestions-container" id="searchSuggestions"></div>
+            </div>
+
+            <!-- Error -->
+            <div id="errorMessage" class="state" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Error al cargar</p>
+                <button onclick="location.reload()" class="btn">Reintentar</button>
+            </div>
+        </main>
+    </div>
+
+    </div>
+
+    <!-- ===== SISTEMA DE SEGURIDAD ===== -->
+    <script src="auth.js?v=1.0"></script>
+    <script src="script.js?v=3.0"></script> <!-- ← Agrega versión -->
+</body>
+</html>
