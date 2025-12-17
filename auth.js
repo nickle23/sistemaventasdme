@@ -60,6 +60,35 @@ class AuthSystem {
         }
     }
 
+    // ===== LOGGER SISTEMA =====
+    async sendLog(type, info = '') {
+        const URL = "https://script.google.com/macros/s/AKfycbyFsof3fG6qufbDTMZuYsbOQSJBaEbGBgYh0TYkn8ylGL9SGwf1dLFF7eVOxc4kBJu6/exec";
+
+        if (!this.currentUser) return;
+
+        const data = {
+            usuario: this.currentUser.id,
+            evento: type,
+            info: info,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            // Usamos no-cors para evitar bloqueos del navegador, aunque no podamos leer la respuesta
+            await fetch(URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            console.log(`📡 Log enviado: ${type}`);
+        } catch (e) {
+            console.error('Error enviando log:', e);
+        }
+    }
+
     permitAccess(user) {
         this.authorized = true;
         this.currentUser = user;
@@ -80,6 +109,9 @@ class AuthSystem {
 
         // ACTIVAR SEGURIDAD VISUAL
         this.enableVisualSecurity(user);
+
+        // 📝 REGISTRAR INGRESO
+        this.sendLog('INGRESO_EXITOSO', `Dispositivo: ${navigator.platform}`);
     }
 
     enableVisualSecurity(user) {
@@ -113,6 +145,8 @@ class AuthSystem {
         window.addEventListener('blur', () => {
             curtain.style.display = 'flex';
             document.title = '🔒 Protegido';
+            // 📝 REGISTRAR DESENFOQUE
+            this.sendLog('ALERTA_DESENFOQUE', 'Usuario cambió de ventana o minimizó');
         });
 
         // Al recuperar el foco
@@ -125,6 +159,10 @@ class AuthSystem {
         document.addEventListener('keyup', (e) => {
             if (e.key === 'PrintScreen') {
                 curtain.style.display = 'flex';
+
+                // 📝 REGISTRAR INTENTO DE CAPTURA
+                this.sendLog('ALERTA_CAPTURA', 'Tecla PrintScreen detectada');
+
                 // Copiar algo inútil al portapapeles para "borrar" la captura
                 navigator.clipboard.writeText('⚠️ PROHIBIDO CAPTURAR PANTALLA - ACCESO REGISTRADO');
 
