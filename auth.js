@@ -67,7 +67,7 @@ class AuthSystem {
         if (!this.currentUser) return;
 
         const data = {
-            usuario: this.currentUser.id,
+            usuario: `${this.currentUser.id} | ${this.currentUser.name || 'Sin Nombre'}`,
             evento: type,
             info: info,
             timestamp: new Date().toISOString()
