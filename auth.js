@@ -60,6 +60,44 @@ class AuthSystem {
         }
     }
 
+    getDetailedDeviceInfo() {
+        const ua = navigator.userAgent;
+        let info = navigator.platform;
+
+        try {
+            if (/Android/.test(ua)) {
+                // Info tipo: Android 11; SM-A515F
+                const match = ua.match(/Android\s([0-9.]+);\s([^;)]+)/);
+                if (match) {
+                    info = `Android ${match[1]} (${match[2]})`;
+                } else {
+                    info = 'Android Device';
+                }
+            } else if (/iPhone|iPad|iPod/.test(ua)) {
+                // Info tipo: iPhone; CPU iPhone OS 14_0
+                const match = ua.match(/OS\s([\d_]+)\slike Mac OS X/);
+                const version = match ? match[1].replace(/_/g, '.') : '';
+
+                if (/iPhone/.test(ua)) info = `iPhone (iOS ${version})`;
+                else if (/iPad/.test(ua)) info = `iPad (iOS ${version})`;
+                else info = `iOS Device (${version})`;
+
+            } else if (/Windows/.test(ua)) {
+                info = 'Windows PC';
+                if (/Win64/.test(ua)) info += ' (64-bit)';
+            } else if (/Mac/.test(ua)) {
+                info = 'Macintosh';
+                if (/Mac OS X\s([\d_]+)/.test(ua)) {
+                    info += ` (OS X ${ua.match(/Mac OS X\s([\d_]+)/)[1].replace(/_/g, '.')})`;
+                }
+            }
+        } catch (e) {
+            console.warn('Error parseando user agent', e);
+        }
+
+        return info;
+    }
+
     // ===== LOGGER SISTEMA =====
     async sendLog(type, info = '') {
         const URL = "https://script.google.com/macros/s/AKfycbyFsof3fG6qufbDTMZuYsbOQSJBaEbGBgYh0TYkn8ylGL9SGwf1dLFF7eVOxc4kBJu6/exec";
@@ -111,7 +149,7 @@ class AuthSystem {
         this.enableVisualSecurity(user);
 
         // 📝 REGISTRAR INGRESO
-        this.sendLog('INGRESO_EXITOSO', `Dispositivo: ${navigator.platform}`);
+        this.sendLog('INGRESO_EXITOSO', this.getDetailedDeviceInfo());
     }
 
     enableVisualSecurity(user) {
