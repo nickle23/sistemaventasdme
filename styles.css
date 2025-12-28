@@ -421,6 +421,10 @@ body {
     font-weight: 600;
     margin-bottom: var(--space-2);
     letter-spacing: 0.3px;
+    /* Ajustar códigos largos */
+    overflow-wrap: break-word;
+    word-break: break-all;
+    max-width: 100%;
 }
 
 .product-desc {
@@ -428,6 +432,13 @@ body {
     line-height: 1.4;
     color: var(--text-primary);
     font-weight: 500;
+    font-weight: 500;
+    /* Evitar desbordamiento horizontal */
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+    text-align: left;
+    /* Forzar alineación limpia */
 }
 
 /* Variantes Compactas */
@@ -526,7 +537,7 @@ body {
     }
 
     .results-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
         gap: var(--space-3);
     }
 
@@ -585,17 +596,41 @@ body {
     }
 
     .variant-item {
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+            "unit price"
+            "stock unitprice";
         gap: var(--space-2);
-        padding: var(--space-2);
+        padding: var(--space-3);
+        align-items: center;
+    }
+
+    .variant-unit {
+        grid-area: unit;
+        justify-self: start;
+    }
+
+    .variant-price {
+        grid-area: price;
+        justify-self: end;
+    }
+
+    .variant-stock {
+        grid-area: stock;
+        justify-self: start;
+        font-size: 12px;
     }
 
     .variant-unitprice {
+        grid-area: unitprice;
+        justify-self: end;
         margin-left: 0;
-        width: 100%;
+        width: auto;
         text-align: right;
-        padding-top: var(--space-1);
-        border-top: 1px solid var(--border);
+        padding-top: 0;
+        border-top: none;
+        font-size: 11px;
     }
 
     .state {
@@ -722,16 +757,19 @@ body {
     width: 100vw;
     height: 100vh;
     z-index: 9999;
-    pointer-events: none; /* CLICK THROUGH - NO BLOQUEA EL USO */
+    pointer-events: none;
+    /* CLICK THROUGH - NO BLOQUEA EL USO */
     display: flex;
     flex-wrap: wrap;
     overflow: hidden;
-    opacity: 0.08; /* Muy sutil pero visible */
+    opacity: 0.08;
+    /* Muy sutil pero visible */
     user-select: none;
 }
 
 .security-watermark span {
-    flex: 1 1 150px; /* Tamaño adaptable */
+    flex: 1 1 150px;
+    /* Tamaño adaptable */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -750,12 +788,14 @@ body {
     width: 100%;
     height: 100%;
     background: #000;
-    z-index: 99999; /* Encima de TODO */
+    z-index: 99999;
+    /* Encima de TODO */
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ef4444;
     font-size: 2rem;
     cursor: not-allowed;
-    display: none; /* Oculto por defecto */
+    display: none;
+    /* Oculto por defecto */
 }
