@@ -121,6 +121,11 @@ body {
     font-size: 12px;
 }
 
+/* Ocultar separador si no hay fecha */
+.status-date:empty+.status-separator {
+    display: none;
+}
+
 .status-total {
     color: #ffd700;
     /* Dorado para resaltar el total */
@@ -130,27 +135,56 @@ body {
 }
 
 /* Celulares: Ajustar layout */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     .header-content {
         flex-direction: column;
+        align-items: stretch;
+        /* Ocupar todo el ancho */
         gap: 8px;
-        align-items: center;
     }
 
     .header {
         height: auto;
-        padding-bottom: 12px;
+        padding-bottom: 10px;
+        padding-top: 10px;
     }
 
-    .search-section {
-        top: 86px;
-        /* Ajustar sticky cuando cambia altura header */
+    .brand {
+        justify-content: center;
+    }
+
+    .brand-text {
+        font-size: 14px;
+        /* Texto un poco más pequeño */
     }
 
     .header-info {
         width: 100%;
         justify-content: center;
-        background: rgba(0, 0, 0, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+        padding: 4px 10px;
+    }
+
+    /* Modificar posición del search sticky según altura nueva del header */
+    .search-section {
+        top: 86px;
+        /* Altura aproximada del nuevo header */
+    }
+}
+
+/* Celulares muy pequeños (iPhone SE, etc) */
+@media (max-width: 380px) {
+    .brand-text {
+        font-size: 13px;
+    }
+
+    .status-date {
+        font-size: 10px;
+        /* Reducir fecha */
+    }
+
+    .status-total {
+        font-size: 11px;
     }
 }
 

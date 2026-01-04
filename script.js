@@ -495,15 +495,14 @@ class ProductSearch {
             // Formato: "3 de enero de 2026"
             const formattedDate = date.toLocaleDateString('es-ES', options);
 
-            // Capitalizar primera letra del mes si es necesario (opcional)
-            // const finalDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+            // Capitalizar: "3 de Enero de 2026"
+            const finalDate = formattedDate.replace(/ de ([a-z])/g, (match, p1) => " de " + p1.toUpperCase());
 
-            const container = document.getElementById('updateContainer');
             const textElement = document.getElementById('lastUpdateText');
 
-            if (container && textElement) {
-                textElement.textContent = `Actualizado: ${formattedDate}`;
-                container.style.display = 'block';
+            if (textElement) {
+                // Formato simple y limpio
+                textElement.textContent = `Actualizado: ${finalDate}`;
             }
         } catch (e) {
             console.error('Error parseando fecha:', e);
