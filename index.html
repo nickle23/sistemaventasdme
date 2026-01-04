@@ -19,6 +19,33 @@
             font-family: system-ui, -apple-system, sans-serif !important;
         }
 
+        /* Badge de Actualización */
+        .update-info-container {
+            text-align: center;
+            margin-top: -10px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .update-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            font-size: 0.85rem;
+            color: #64748b;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            backdrop-filter: blur(4px);
+        }
+
+        .update-badge i {
+            color: #10b981;
+        }
+
         /* Oculta la app hasta que CSS completo cargue */
         .app {
             opacity: 0 !important;
@@ -85,6 +112,14 @@
                 <div class="product-count" id="productCount">0</div>
             </div>
         </header>
+
+        <!-- Container para fecha de actualización -->
+        <div id="updateContainer" class="update-info-container" style="display: none;">
+            <div class="update-badge">
+                <i class="fas fa-calendar-check"></i>
+                <span id="lastUpdateText">Actualizando...</span>
+            </div>
+        </div>
 
         <!-- Búsqueda Compacta -->
         <section class="search-section">

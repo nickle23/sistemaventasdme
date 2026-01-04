@@ -5,6 +5,7 @@ import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import shutil
+from datetime import datetime
 
 
 from Crypto.Cipher import AES
@@ -75,7 +76,15 @@ class SincronizadorGitHub:
                 productos.append(producto)
             
             # Convertir a String JSON
-            json_str = json.dumps(productos, ensure_ascii=False)
+            # === MODIFICACIÓN: Agregar metadata con fecha ===
+            data = {
+                "metadata": {
+                    "last_updated": datetime.now().isoformat(),
+                    "total_products": len(productos)
+                },
+                "products": productos
+            }
+            json_str = json.dumps(data, ensure_ascii=False)
             
             # ENCRIPTAR
             print("🔒 Encriptando datos con AES-256...")

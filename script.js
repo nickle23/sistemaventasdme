@@ -447,7 +447,19 @@ class ProductSearch {
 
                 if (!jsonString) throw new Error("Fallo de desencriptación (clave incorrecta o archivo dañado)");
 
-                this.products = JSON.parse(jsonString);
+                const data = JSON.parse(jsonString);
+
+                // Soporte RETROCOMPATIBLE (Arrays antiguos vs Objeto nuevo)
+                if (Array.isArray(data)) {
+                    this.products = data;
+                } else if (data.products && Array.isArray(data.products)) {
+                    this.products = data.products;
+                    if (data.metadata && data.metadata.last_updated) {
+                        this.showUpdateDate(data.metadata.last_updated);
+                    }
+                } else {
+                    throw new Error("Formato de datos no reconocido");
+                }
 
             } catch (cryptoError) {
                 console.error("🔐 Error de seguridad:", cryptoError);
@@ -460,6 +472,29 @@ class ProductSearch {
         } catch (error) {
             console.error('❌ Error cargando productos:', error);
             throw error;
+        }
+    }
+
+    // ===== MOSTRAR FECHA DE ACTUALIZACIÓN =====
+    showUpdateDate(isoDateString) {
+        try {
+            const date = new Date(isoDateString);
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            // Formato: "3 de enero de 2026"
+            const formattedDate = date.toLocaleDateString('es-ES', options);
+
+            // Capitalizar primera letra del mes si es necesario (opcional)
+            // const finalDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+
+            const container = document.getElementById('updateContainer');
+            const textElement = document.getElementById('lastUpdateText');
+
+            if (container && textElement) {
+                textElement.textContent = `Actualizado: ${formattedDate}`;
+                container.style.display = 'block';
+            }
+        } catch (e) {
+            console.error('Error parseando fecha:', e);
         }
     }
 
