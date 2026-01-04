@@ -137,8 +137,6 @@ body {
 }
 
 /* Celulares: Ajustar layout */
-/* Celulares: Ajustar layout */
-/* Celulares: Ajustar layout */
 @media (max-width: 768px) {
     .header-content {
         flex-direction: row;
@@ -178,8 +176,8 @@ body {
         /* Mobile: ULTRA FINO (0px) */
         flex-grow: 0;
         position: relative;
-        top: -6px;
-        /* Subir info para pegar al título */
+        top: -2px;
+        /* Separación milimétrica para evitar solapamiento */
         height: 22px;
         /* Forzar altura mínima muy fina */
     }
@@ -208,10 +206,7 @@ body {
         font-size: 10px;
     }
 
-    .header-info {
-        padding: 1px 6px;
-        /* Super fino en pantallas muy chicas */
-    }
+    /* Padding hereda 0px del query anterior para consistencia */
 }
 
 /* Celulares muy pequeños (iPhone SE, etc) */
