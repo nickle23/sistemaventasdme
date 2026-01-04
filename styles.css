@@ -105,7 +105,8 @@ body {
     align-items: center;
     gap: 8px;
     background: rgba(255, 255, 255, 0.1);
-    padding: 6px 14px;
+    padding: 3px 14px;
+    /* Padding vertical reducido (más fino) */
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
@@ -146,7 +147,8 @@ body {
         /* Permitir bajar si no cabe */
         justify-content: center;
         /* Centrar todo si baja */
-        gap: 8px;
+        gap: 2px;
+        /* Gap reducido drásticamente */
     }
 
     .header {
@@ -158,8 +160,8 @@ body {
 
     .brand {
         justify-content: center;
-        margin-top: 4px;
-        /* Bajar un poco el título */
+        margin-top: 8px;
+        /* Bajar título */
     }
 
     .brand-text {
@@ -172,11 +174,19 @@ body {
         width: auto;
         /* No forzar ancho completo */
         background: rgba(255, 255, 255, 0.1);
-        padding: 4px 10px;
+        padding: 0px 10px;
+        /* Mobile: ULTRA FINO (0px) */
         flex-grow: 0;
         position: relative;
-        top: -4px;
-        /* Subir un poco la info */
+        top: -6px;
+        /* Subir info para pegar al título */
+        height: 22px;
+        /* Forzar altura mínima muy fina */
+    }
+
+    .status-date,
+    .status-total {
+        line-height: 1;
     }
 
     /* Modificar posición del search sticky */
@@ -199,7 +209,8 @@ body {
     }
 
     .header-info {
-        padding: 3px 6px;
+        padding: 1px 6px;
+        /* Super fino en pantallas muy chicas */
     }
 }
 
