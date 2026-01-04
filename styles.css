@@ -96,12 +96,72 @@ body {
     font-weight: 600;
 }
 
+
+
+/* Nuevo Container de Info en Header */
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.status-date {
+    color: #e2e8f0;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-separator {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+}
+
+.status-total {
+    color: #ffd700;
+    /* Dorado para resaltar el total */
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Celulares: Ajustar layout */
+@media (max-width: 600px) {
+    .header-content {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .header {
+        height: auto;
+        padding-bottom: 12px;
+    }
+
+    .search-section {
+        top: 86px;
+        /* Ajustar sticky cuando cambia altura header */
+    }
+
+    .header-info {
+        width: 100%;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.2);
+    }
+}
+
+/*
 .product-count {
     color: var(--text-light);
     font-size: 13px;
     font-weight: 500;
     opacity: 0.8;
 }
+*/
 
 /* ===== BÚSQUEDA COMPACTA ===== */
 .search-section {

@@ -103,23 +103,23 @@
 <body>
     <div class="app">
         <!-- Header Super Compacto -->
+
         <header class="header">
             <div class="header-content">
                 <div class="brand">
                     <i class="fas fa-search"></i>
                     <span class="brand-text">DISTRIBUIDORA MUNDO ESCOLAR</span>
                 </div>
-                <div class="product-count" id="productCount">0</div>
+                <!-- Container unificado: Fecha + Total -->
+                <div class="header-info" id="systemStatus">
+                    <span class="status-date" id="lastUpdateText"></span>
+                    <span class="status-separator">|</span>
+                    <span class="status-total" id="productCount">0 Productos</span>
+                </div>
             </div>
         </header>
 
-        <!-- Container para fecha de actualización -->
-        <div id="updateContainer" class="update-info-container" style="display: none;">
-            <div class="update-badge">
-                <i class="fas fa-calendar-check"></i>
-                <span id="lastUpdateText">Actualizando...</span>
-            </div>
-        </div>
+        <!-- (Eliminado container antiguo) -->
 
         <!-- Búsqueda Compacta -->
         <section class="search-section">
