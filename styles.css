@@ -139,14 +139,12 @@ body {
 /* Celulares: Ajustar layout */
 @media (max-width: 768px) {
     .header-content {
-        flex-direction: row;
-        /* Volver a fila */
-        flex-wrap: wrap;
-        /* Permitir bajar si no cabe */
+        flex-direction: column;
+        /* Forzar siempre uno debajo del otro */
         justify-content: center;
-        /* Centrar todo si baja */
+        align-items: center;
         gap: 2px;
-        /* Gap reducido drásticamente */
+        /* Gap reducido */
     }
 
     .header {
