@@ -120,9 +120,45 @@ class SincronizadorGitHub:
         except Exception as e:
             print(f"⚠️ No se pudo respaldar Excel: {e}")
         
+        except Exception as e:
+            print(f"⚠️ No se pudo respaldar Excel: {e}")
+        
+        # 3. ACTUALIZAR VERSIÓN EN INDEX.HTML (CACHE BUSTING)
+        self.actualizar_version_index()
+
         print("🎯 Proceso completado - Datos Protegidos y Listos para Subir!")
         print("=" * 60)
     
+    def actualizar_version_index(self):
+        """Actualiza el parámetro ?v=TIMESTAMP en index.html para evitar caché"""
+        try:
+            archivo_index = "index.html"
+            if not os.path.exists(archivo_index):
+                return
+                
+            print("🔄 Actualizando versión en index.html...")
+            
+            with open(archivo_index, 'r', encoding='utf-8') as f:
+                contenido = f.read()
+            
+            # Generar nueva versión basada en timestamp corto
+            nueva_version = f"v={int(time.time())}"
+            
+            # Reemplazar cualquier v=... por la nueva versión
+            import re
+            contenido_nuevo = re.sub(r'v=[\w\.]+', nueva_version, contenido)
+            
+            # Solo escribir si hubo cambios
+            if contenido != contenido_nuevo:
+                with open(archivo_index, 'w', encoding='utf-8') as f:
+                    f.write(contenido_nuevo)
+                print(f"✅ Versión actualizada a: {nueva_version}")
+            else:
+                print("ℹ️ La versión ya estaba actualizada")
+                
+        except Exception as e:
+            print(f"⚠️ No se pudo actualizar versión en index.html: {e}")
+
     def iniciar_vigilancia(self):
         """Inicia la vigilancia automática"""
         print("🚀 GENERADOR AUTOMÁTICO DE SEGURIDAD")

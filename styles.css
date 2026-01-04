@@ -135,18 +135,22 @@ body {
 }
 
 /* Celulares: Ajustar layout */
+/* Celulares: Ajustar layout */
 @media (max-width: 768px) {
     .header-content {
-        flex-direction: column;
-        align-items: stretch;
-        /* Ocupar todo el ancho */
+        flex-direction: row;
+        /* Volver a fila */
+        flex-wrap: wrap;
+        /* Permitir bajar si no cabe */
+        justify-content: center;
+        /* Centrar todo si baja */
         gap: 8px;
     }
 
     .header {
         height: auto;
-        padding-bottom: 10px;
-        padding-top: 10px;
+        padding-bottom: 8px;
+        padding-top: 8px;
     }
 
     .brand {
@@ -154,21 +158,39 @@ body {
     }
 
     .brand-text {
-        font-size: 14px;
-        /* Texto un poco más pequeño */
+        font-size: 13px;
+        /* Texto reducido */
+        white-space: nowrap;
     }
 
     .header-info {
-        width: 100%;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.08);
+        width: auto;
+        /* No forzar ancho completo */
+        background: rgba(255, 255, 255, 0.1);
         padding: 4px 10px;
+        flex-grow: 0;
     }
 
-    /* Modificar posición del search sticky según altura nueva del header */
+    /* Modificar posición del search sticky */
     .search-section {
-        top: 86px;
-        /* Altura aproximada del nuevo header */
+        top: 80px;
+    }
+}
+
+/* Celulares muy pequeños: Ajuste de textos */
+@media (max-width: 400px) {
+    .brand-text {
+        font-size: 11px;
+        /* Reducir aún más para intentar que quepan */
+    }
+
+    .status-date,
+    .status-total {
+        font-size: 10px;
+    }
+
+    .header-info {
+        padding: 3px 6px;
     }
 }
 
