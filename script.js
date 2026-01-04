@@ -1,31 +1,4 @@
-// ===== LIMPIAR CACHE AL CARGAR =====
-(function () {
-    'use strict';
 
-    console.log('🔄 Forzando actualización de cache...');
-
-    // Forzar recarga de CSS
-    const links = document.querySelectorAll('link[rel="stylesheet"]');
-    links.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && href.includes('styles.css')) {
-            const newHref = href.split('?')[0] + '?v=' + Date.now();
-            link.setAttribute('href', newHref);
-            console.log('✅ CSS actualizado:', newHref);
-        }
-    });
-
-    // Forzar recarga de JS
-    const scripts = document.querySelectorAll('script[src]');
-    scripts.forEach(script => {
-        const src = script.getAttribute('src');
-        if (src && src.includes('script.js')) {
-            const newSrc = src.split('?')[0] + '?v=' + Date.now();
-            script.setAttribute('src', newSrc);
-            console.log('✅ JS actualizado:', newSrc);
-        }
-    });
-})();
 
 // Buscador Profesional ULTRA INTUITIVO
 class ProductSearch {
