@@ -66,6 +66,9 @@ class GestorUsuariosApp:
         btn_edit = ttk.Button(action_frame, text="✏️ Editar Nombre", command=self.editar_usuario)
         btn_edit.pack(side=tk.LEFT, padx=5)
         
+        btn_edit_id = ttk.Button(action_frame, text="🆔 Editar ID", command=self.editar_id)
+        btn_edit_id.pack(side=tk.LEFT, padx=5)
+        
         btn_delete = ttk.Button(action_frame, text="🗑️ Eliminar Definitivamente", command=self.eliminar_usuario)
         btn_delete.pack(side=tk.RIGHT, padx=5)
 
@@ -97,6 +100,7 @@ class GestorUsuariosApp:
         self.menu = tk.Menu(root, tearoff=0)
         self.menu.add_command(label="Bloquear/Desbloquear", command=self.toggle_status)
         self.menu.add_command(label="Editar Nombre", command=self.editar_usuario)
+        self.menu.add_command(label="Editar ID", command=self.editar_id)
         self.menu.add_separator()
         self.menu.add_command(label="Eliminar", command=self.eliminar_usuario)
         
@@ -225,6 +229,36 @@ class GestorUsuariosApp:
                 user['name'] = new_name.strip()
                 user['date'] = datetime.now().strftime("%Y-%m-%d %H:%M")
                 self.guardar_json(data)
+
+    def editar_id(self):
+        user_id = self.get_selected_id()
+        if not user_id: return
+        
+        data = self.leer_json()
+        user = next((u for u in data['users'] if str(u['id']) == str(user_id)), None)
+        
+        if user:
+            new_id = simpledialog.askstring("Editar ID Dispositivo", 
+                                          f"Nuevo ID para {user['name']}:", 
+                                          initialvalue=user['id'])
+            
+            if new_id and new_id.strip():
+                new_id = new_id.strip()
+                
+                # Si el ID no cambió, no hacer nada
+                if new_id == user['id']:
+                    return
+
+                # Verificar si el NUEVO ID ya lo tiene otra persona
+                for u in data['users']:
+                    if u['id'] == new_id:
+                        messagebox.showerror("Error", f"El ID '{new_id}' ya está registrado a nombre de: {u['name']}")
+                        return
+                
+                user['id'] = new_id
+                user['date'] = datetime.now().strftime("%Y-%m-%d %H:%M")
+                if self.guardar_json(data):
+                    messagebox.showinfo("Éxito", "ID actualizado correctamente.")
 
     def eliminar_usuario(self):
         user_id = self.get_selected_id()
