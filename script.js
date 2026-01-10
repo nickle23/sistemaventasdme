@@ -383,9 +383,18 @@ class ProductSearch {
     showHomePanel() {
         this.currentState = 'home';
         this.hideAllStates();
-
         const homePanel = document.getElementById('homePanel');
+        const resultsContainer = document.getElementById('resultsContainer');
         const countElement = document.getElementById('resultsCount');
+
+        if (homePanel) homePanel.style.display = 'block';
+        if (resultsContainer) resultsContainer.style.display = 'none';
+
+        // Limpiar input si volvemos a inicio real
+        const input = document.getElementById('searchInput');
+        if (input && !this.lastSearchTerm) {
+            input.value = '';
+        }
 
         // Actualizar contador del header
         const headerCount = document.getElementById('productCount');
@@ -398,6 +407,9 @@ class ProductSearch {
 
         this.updateRecentSearchesUI();
         this.updatePopularProductsUI();
+
+        // Limpiar el rastro de la última búsqueda al volver a inicio
+        this.lastSearchTerm = '';
     }
 
     hideHomePanel() {
@@ -442,6 +454,10 @@ class ProductSearch {
                     if (data.metadata && data.metadata.last_updated) {
                         this.showUpdateDate(data.metadata.last_updated);
                     }
+                    // NUEVO: Verificar cambios
+                    if (data.changes) {
+                        this.showChangesUI(data.changes);
+                    }
                 } else {
                     throw new Error("Formato de datos no reconocido");
                 }
@@ -480,6 +496,254 @@ class ProductSearch {
         } catch (e) {
             console.error('Error parseando fecha:', e);
         }
+    }
+
+    // ===== GESTIÓN DE NOVEDADES (Cambios de precio / nuevos) =====
+    showChangesUI(changes) {
+        const panel = document.getElementById('changesPanel');
+        const grid = document.getElementById('changesGrid');
+
+        if (!panel || !grid) return;
+
+        // Función para validar si un precio es válido
+        const isValidPrice = (price) => {
+            if (!price || price === '' || price === 'nan' || price === 'NaN') return false;
+            const num = parseFloat(price);
+            return !isNaN(num) && num > 0;
+        };
+
+        // Filtrar productos con precios inválidos SOLO en Novedades
+        const validNuevos = changes.nuevos ? changes.nuevos.filter(item => isValidPrice(item.precio)) : [];
+        const validPrecios = changes.precios ? changes.precios.filter(item =>
+            isValidPrice(item.precio_nuevo) && isValidPrice(item.precio_antiguo)
+        ) : [];
+
+        // Verificar si hay datos válidos
+        const hasNew = validNuevos.length > 0;
+        const hasPrice = validPrecios.length > 0;
+
+        if (!hasNew && !hasPrice) return;
+
+        // Mostrar panel
+        panel.style.display = 'block';
+        grid.innerHTML = '';
+
+        // Función helper para agrupar
+        const groupItems = (items) => {
+            const grouped = new Map();
+            items.forEach(item => {
+                const code = item.codigo;
+                if (!grouped.has(code)) {
+                    grouped.set(code, {
+                        codigo: code,
+                        descripcion: item.descripcion,
+                        variations: []
+                    });
+                }
+                grouped.get(code).variations.push(item);
+            });
+            return grouped;
+        };
+
+        // --- 1. Renderizar NUEVOS (AGRUPADOS) ---
+        if (hasNew) {
+            const groupedNew = groupItems(validNuevos);
+            groupedNew.forEach(group => {
+                grid.appendChild(this.createGroupedChangeCard(group, 'new'));
+            });
+        }
+
+        // --- 2. Renderizar CAMBIOS DE PRECIO (AGRUPADOS) ---
+        if (hasPrice) {
+            const groupedPrice = groupItems(validPrecios);
+            groupedPrice.forEach(group => {
+                grid.appendChild(this.createGroupedChangeCard(group, 'update'));
+            });
+        }
+
+        console.log(`🔔 Novedades mostradas: ${validNuevos.length} nuevos, ${validPrecios.length} cambios de precio.`);
+    }
+
+    hideChanges() {
+        const panel = document.getElementById('changesPanel');
+        if (panel) panel.style.display = 'none';
+        // Opcional: Guardar en localStorage que ya se vio, para no mostrar hasta siguiente update
+    }
+
+    createChangeCard(item, type) {
+        const card = document.createElement('div');
+
+        // Determinar unidad a mostrar
+        const unitDisplay = item.unidad ? `<span style="font-size:10px; color:#64748b; background:#f1f5f9; padding:2px 5px; border-radius:4px; margin-left:4px;">${item.unidad}</span>` : '';
+
+        let badgeClass = '';
+        let badgeText = '';
+        let cardClass = '';
+        let priceHtml = '';
+
+        if (type === 'new') {
+            badgeClass = 'badge-new';
+            badgeText = 'NUEVO';
+            cardClass = 'is-new';
+            priceHtml = `<div class="new-price">S/. ${item.precio}</div>`;
+        } else if (type === 'up') {
+            badgeClass = 'badge-up';
+            badgeText = 'SUBIÓ';
+            cardClass = 'is-price-up';
+            priceHtml = `
+                <span class="old-price">S/. ${item.precio_antiguo}</span>
+                <span class="price-arrow up">▲</span>
+                <span class="new-price" style="color: var(--error)">S/. ${item.precio_nuevo}</span>
+            `;
+        } else if (type === 'down') {
+            badgeClass = 'badge-down';
+            badgeText = 'BAJÓ';
+            cardClass = 'is-price-down';
+            priceHtml = `
+                <span class="old-price">S/. ${item.precio_antiguo}</span>
+                <span class="price-arrow down">▼</span>
+                <span class="new-price" style="color: var(--primary)">S/. ${item.precio_nuevo}</span>
+            `;
+        }
+
+        card.className = `change-card ${cardClass}`;
+        card.onclick = () => {
+            this.performSearch(item.codigo, true);
+        };
+
+        card.innerHTML = `
+            <div class="change-badge ${badgeClass}">${badgeText}</div>
+            <div class="product-code" style="margin-bottom:4px; font-size:10px; display:flex; align-items:center;">
+                ${item.codigo} ${unitDisplay}
+            </div>
+            <div class="product-desc" style="font-size:13px; margin-bottom:8px;">${this.truncateText(item.descripcion, 50)}</div>
+            <div class="change-info">
+                ${priceHtml}
+            </div>
+        `;
+
+        return card;
+    }
+
+    createGroupedChangeCard(group, type) {
+        const card = document.createElement('div');
+        card.className = 'change-card'; // Clase base
+
+        // Configuración según tipo
+        let badgeClass = '';
+        let badgeText = '';
+        let cardBaseClass = '';
+
+        if (type === 'new') {
+            // Determinar si es producto completamente nuevo o nueva unidad
+            // Usar valores por defecto si los campos no existen (compatibilidad con datos antiguos)
+            const esProductoNuevo = group.variations.some(v => v.es_producto_nuevo === true);
+            const esNuevaUnidad = group.variations.some(v => v.tipo_cambio === 'nueva_unidad');
+
+            if (esProductoNuevo) {
+                badgeClass = 'badge-new';
+                badgeText = 'PRODUCTO NUEVO';
+                cardBaseClass = 'is-new';
+            } else if (esNuevaUnidad) {
+                // Determinar el tipo de unidad agregada para mensaje descriptivo
+                const nuevaUnidad = group.variations.find(v => v.tipo_cambio === 'nueva_unidad');
+                const unidadNombre = nuevaUnidad?.unidad?.toUpperCase() || 'UNIDAD';
+
+                if (unidadNombre.includes('DOC') || unidadNombre.includes('DOCENA')) {
+                    badgeText = 'PRECIO MAYORISTA AGREGADO';
+                } else if (unidadNombre.includes('CJA') || unidadNombre.includes('CAJA')) {
+                    badgeText = 'PRECIO POR CAJA AGREGADO';
+                } else {
+                    badgeText = `PRECIO ${unidadNombre} AGREGADO`;
+                }
+
+                badgeClass = 'badge-new-variant';
+                cardBaseClass = 'is-new-variant';
+            } else {
+                badgeClass = 'badge-new';
+                badgeText = 'NUEVO';
+                cardBaseClass = 'is-new';
+            }
+        } else {
+            // Update: Determinar si subió para color del borde
+            const hasRise = group.variations.some(v => v.tipo === 'subio');
+            badgeClass = hasRise ? 'badge-up' : 'badge-down';
+            badgeText = 'CAMBIO PRECIO';
+            cardBaseClass = hasRise ? 'is-price-up' : 'is-price-down';
+        }
+
+        card.classList.add(cardBaseClass);
+        card.onclick = () => this.performSearch(group.codigo, true, true);
+
+        // Construir lista de variaciones
+        let variationsHtml = '';
+
+        group.variations.forEach(v => {
+            let rowContent = '';
+
+            if (type === 'new') {
+                // Vista para NUEVOS (Solo precio actual + tipo de cambio)
+                // Mensaje descriptivo según el tipo de unidad agregada
+                let tipoCambioText = '';
+                if (v.tipo_cambio === 'nueva_unidad') {
+                    const unidadNombre = v.unidad?.toUpperCase() || 'UND';
+                    let mensaje = 'NUEVA';
+
+                    if (unidadNombre.includes('DOC') || unidadNombre.includes('DOCENA')) {
+                        mensaje = 'MAYORISTA';
+                    } else if (unidadNombre.includes('CJA') || unidadNombre.includes('CAJA')) {
+                        mensaje = 'POR CAJA';
+                    }
+
+                    tipoCambioText = `<span style="font-size:9px; color:#10b981; background:#d1fae5; padding:2px 6px; border-radius:3px; margin-left:6px;">${mensaje}</span>`;
+                }
+
+                rowContent = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center;">
+                            <span style="font-weight:600; color:#475569; min-width:40px;">${v.unidad || 'UND'}</span>
+                            ${tipoCambioText}
+                        </div>
+                        <span style="font-weight:700; color:var(--text-primary); font-size:13px;">S/.${v.precio}</span>
+                    </div>
+                `;
+            } else {
+                // Vista para ACTUALIZACIONES (Antiguo -> Nuevo + Flecha)
+                const isUp = v.tipo === 'subio';
+                const color = isUp ? 'var(--error)' : 'var(--primary)';
+                const arrow = isUp ? '▲' : '▼';
+
+                rowContent = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:600; color:#475569; min-width:40px;">${v.unidad || 'UND'}</span>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="text-decoration:line-through; color:#94a3b8; font-size:11px;">S/.${v.precio_antiguo}</span>
+                            <span style="font-size:10px; color:${color};">${arrow}</span>
+                            <span style="font-weight:700; color:${color}; font-size:13px;">S/.${v.precio_nuevo}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            variationsHtml += `
+                <div class="variation-row" style="margin-top:6px; font-size:12px; border-top:1px dashed #e2e8f0; padding-top:4px;">
+                    ${rowContent}
+                </div>
+            `;
+        });
+
+        card.innerHTML = `
+            <div class="change-badge ${badgeClass}" style="position:absolute; top:10px; right:10px;">${badgeText}</div>
+            <div class="product-code">${group.codigo}</div>
+            <div class="product-desc" style="font-size:13px; color:var(--text-muted); margin-bottom:10px; line-height:1.4;">
+                ${this.truncateText(group.descripcion, 50)}
+            </div>
+            <div class="variations-container">
+                ${variationsHtml}
+            </div>
+        `;
+
+        return card;
     }
 
     groupProducts() {
@@ -521,6 +785,22 @@ class ProductSearch {
             return;
         }
 
+        // --- SISTEMA DE NAVEGACIÓN (HISTORIAL) ---
+        window.addEventListener('popstate', (event) => {
+            const state = event.state;
+            if (state && state.term) {
+                // Si hay un término en el historial, restaurar búsqueda
+                input.value = state.term;
+                this.search(state.term, state.isExact || false);
+                this.toggleClearButton(true);
+            } else {
+                // Si no hay estado (o es null), volver a inicio
+                input.value = '';
+                this.showHomePanel();
+                this.toggleClearButton(false);
+            }
+        });
+
         let timeout;
         input.addEventListener('input', (e) => {
             const term = e.target.value.trim();
@@ -531,10 +811,12 @@ class ProductSearch {
             timeout = setTimeout(() => {
                 if (term === '') {
                     this.showHomePanel();
+                    // Limpiar URL si borra todo
+                    history.pushState(null, '', location.pathname);
                 } else {
-                    this.performSearch(term, false);
+                    this.performSearch(term, false); // Input normal no guarda historial salto a salto para no saturar
                 }
-            }, 150);
+            }, 300); // Un poco mas de delay para escribir tranquilo
         });
 
         clear.addEventListener('click', () => {
@@ -542,6 +824,7 @@ class ProductSearch {
             this.showHomePanel();
             input.focus();
             this.toggleClearButton(false);
+            history.pushState(null, '', location.pathname);
         });
 
         input.addEventListener('keypress', (e) => {
@@ -551,7 +834,7 @@ class ProductSearch {
                 if (term === '') {
                     this.showHomePanel();
                 } else {
-                    this.performSearch(term, true);
+                    this.performSearch(term, true); // Enter SÍ guarda historial
                 }
             }
         });
@@ -560,19 +843,22 @@ class ProductSearch {
         setTimeout(() => input.focus(), 200);
     }
 
-    performSearch(term, saveToRecent = false) {
-        console.log(`🔍 Ejecutando búsqueda: "${term}", guardar: ${saveToRecent}`);
+    performSearch(term, saveToRecent = false, isExact = false) {
+        console.log(`🔍 Ejecutando búsqueda: "${term}", guardar: ${saveToRecent}, exacta: ${isExact}`);
 
         this.lastSearchTerm = term;
 
         if (saveToRecent) {
             this.addRecentSearch(term);
+            // AGREGAR AL HISTORIAL DEL NAVEGADOR
+            // Esto habilita el botón "Atrás"
+            history.pushState({ term: term, isExact: isExact }, `Búsqueda: ${term}`, `?q=${encodeURIComponent(term)}${isExact ? '&exact=1' : ''}`);
         }
 
-        this.search(term);
+        this.search(term, isExact);
     }
 
-    search(term) {
+    search(term, isExact = false) {
         const startTime = performance.now();
 
         this.currentState = 'search';
@@ -580,6 +866,16 @@ class ProductSearch {
 
         if (!term) {
             this.showHomePanel();
+            return;
+        }
+
+        // Si es búsqueda exacta y el código existe directamente
+        if (isExact && this.grouped.has(term)) {
+            console.log(`🎯 Coincidencia exacta encontrada para: "${term}"`);
+            const product = this.grouped.get(term);
+            const exactResult = new Map();
+            exactResult.set(term, product);
+            this.displayResults(exactResult, term);
             return;
         }
 
@@ -621,13 +917,13 @@ class ProductSearch {
         this.displayResults(results, term);
 
         const searchTime = performance.now() - startTime;
-        console.log(`🔍 "${term}": ${results.size} resultados en ${searchTime.toFixed(0)}ms`);
+        console.log(`🔍 "${term}": ${results.size} resultados en ${searchTime.toFixed(0)} ms`);
 
         // DEBUG: Mostrar top 3
         if (scoredResults.length > 0) {
             console.log('🏆 Top 3 resultados:');
             scoredResults.slice(0, 3).forEach((item, i) => {
-                console.log(`${i + 1}. ${item.code} - Puntaje: ${item.score}`);
+                console.log(`${i + 1}. ${item.code} - Puntaje: ${item.score} `);
             });
         }
     }
@@ -673,7 +969,7 @@ class ProductSearch {
 
     // ===== CLICK EN PRODUCTOS =====
     handleProductClick(clickedProduct, searchTerm) {
-        console.log(`🖱️ Click en producto: ${clickedProduct.codigo}`);
+        console.log(`🖱️ Click en producto: ${clickedProduct.codigo} `);
 
         this.recordProductSearch(clickedProduct.codigo, searchTerm || this.lastSearchTerm, 'result_click');
         this.updatePopularProductsUI();
@@ -707,7 +1003,7 @@ class ProductSearch {
                             ${variant.precio_unit && variant.precio_unit !== '0.00' ?
                             `<span class="variant-unitprice">S/. ${variant.precio_unit}</span>` : ''}
                         </div>
-                    `;
+            `;
                 });
             }
 

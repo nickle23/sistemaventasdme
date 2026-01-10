@@ -802,6 +802,7 @@ body {
     .variant-item:active {
         border-color: var(--accent);
         background: #f1f5f9;
+        transform: scale(0.99);
     }
 
     .popular-product:active {
@@ -850,16 +851,6 @@ body {
 
 /* ===== COBERTURA CONTRA FLASH ===== */
 /* Aseguramos que .app esté posicionado correctamente cuando se haga visible */
-.app {
-    position: relative;
-    min-height: 100vh;
-}
-
-/* Mejora para la transición de aparición */
-.app.css-loaded {
-    animation: fadeInApp 0.3s ease-out;
-}
-
 @keyframes fadeInApp {
     from {
         opacity: 0;
@@ -928,4 +919,170 @@ body {
     cursor: not-allowed;
     display: none;
     /* Oculto por defecto */
+}
+
+/* ===== NOVEDADES Y CAMBIOS ===== */
+.changes-panel {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin-bottom: var(--space-6);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.changes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: var(--space-2);
+}
+
+.changes-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.changes-title i {
+    color: var(--warning);
+}
+
+.changes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-3);
+}
+
+.change-card {
+    background: #fdfdfd;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+    position: relative;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.change-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.change-card.is-new {
+    border-left-color: var(--success);
+    background: #f0fdf4;
+}
+
+.change-card.is-price-up {
+    border-left-color: var(--error);
+    background: #fef2f2;
+}
+
+.change-card.is-price-down {
+    border-left-color: var(--primary);
+    background: #eff6ff;
+}
+
+.change-card.is-new-variant {
+    border-left-color: #10b981;
+    background: #d1fae5;
+}
+
+.change-badge {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.badge-new {
+    background: var(--success);
+    color: white;
+}
+
+.badge-new-variant {
+    background: #10b981;
+    color: white;
+}
+
+.badge-up {
+    background: var(--error);
+    color: white;
+}
+
+.badge-down {
+    background: var(--primary);
+    color: white;
+}
+
+.change-info {
+    margin-top: var(--space-2);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.old-price {
+    text-decoration: line-through;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.new-price {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.price-arrow {
+    font-size: 12px;
+}
+
+.price-arrow.up {
+    color: var(--error);
+    transform: rotate(-45deg);
+    display: inline-block;
+}
+
+.price-arrow.down {
+    color: var(--primary);
+    transform: rotate(45deg);
+    display: inline-block;
+}
+
+/* Estilos para filas de variación */
+.variation-row {
+    transition: background 0.2s;
+}
+
+.change-card:hover .variation-row {
+    border-color: #cbd5e1 !important;
+}
+
+.variation-row:first-child {
+    border-top: none !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Estilo del código de producto en tarjetas de cambios */
+.change-card .product-code {
+    display: inline-block;
+    background: var(--primary);
+    color: var(--text-light);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
