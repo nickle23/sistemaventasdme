@@ -996,12 +996,22 @@ body {
     cursor: pointer;
     color: var(--text-muted);
     transition: all 0.3s ease;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    /* Quitar recuadro azul en móviles */
 }
 
-.toggle-btn:hover {
-    background: var(--primary-light);
-    color: var(--primary);
-    border-color: var(--primary);
+@media (hover: hover) {
+    .toggle-btn:hover {
+        background: var(--primary-light);
+        color: var(--primary);
+        border-color: var(--primary);
+    }
+}
+
+.toggle-btn:active {
+    background: var(--bg-light);
+    transform: scale(0.95);
 }
 
 .changes-panel.collapsed .toggle-btn i {
@@ -1012,8 +1022,9 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: var(--space-3);
-    transition: all 0.3s ease;
-    max-height: 2000px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 8000px;
+    /* Incrementado para evitar truncamiento en móviles */
     opacity: 1;
 }
 
