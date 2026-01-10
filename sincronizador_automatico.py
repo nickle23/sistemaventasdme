@@ -50,13 +50,27 @@ class SincronizadorGitHub:
     def encriptar_datos(self, data_json):
         """Encripta el string JSON usando AES"""
         key = SECRET_KEY.encode('utf-8')
-        # Asegurar que la clave sea de 16, 24 o 32 bytes (completar o recortar)
         key = key[:32].ljust(32, b'\0') 
         
         cipher = AES.new(key, AES.MODE_ECB)
         data_bytes = data_json.encode('utf-8')
         encrypted = cipher.encrypt(pad(data_bytes, AES.block_size))
         return base64.b64encode(encrypted).decode('utf-8')
+
+    def desencriptar_datos(self, contenido_encriptado):
+        """Desencripta datos AES"""
+        try:
+            key = SECRET_KEY.encode('utf-8')
+            key = key[:32].ljust(32, b'\0')
+            
+            cipher = AES.new(key, AES.MODE_ECB)
+            encrypted_bytes = base64.b64decode(contenido_encriptado)
+            from Crypto.Util.Padding import unpad
+            decrypted = unpad(cipher.decrypt(encrypted_bytes), AES.block_size)
+            return decrypted.decode('utf-8')
+        except Exception as e:
+            print(f"Error desencriptando: {e}")
+            return None
 
     def detectar_cambios(self, df_actual, nombre_actual=None):
         """
@@ -188,14 +202,30 @@ class SincronizadorGitHub:
                 }
                 productos.append(producto)
             
+            # --- LÓGICA ACUMULATIVA DE CAMBIOS (7 DÍAS) ---
+            historico_cambios = {"nuevos": [], "precios": []}
+            if os.path.exists(self.archivo_json):
+                try:
+                    with open(self.archivo_json, 'r', encoding='utf-8') as f:
+                        contenido_anterior = f.read()
+                    json_anterior_str = self.desencriptar_datos(contenido_anterior)
+                    if json_anterior_str:
+                        data_anterior = json.loads(json_anterior_str)
+                        if "changes" in data_anterior and data_anterior["changes"]:
+                            historico_cambios = data_anterior["changes"]
+                except Exception as e:
+                    print(f"Nota: No se pudieron recuperar cambios previos: {e}")
+
+            # Merge y Limpieza de cambios
+            cambios_finales = self.merge_cambios(historico_cambios, cambios_detectados)
+            
             # Convertir a String JSON
-            # === MODIFICACIÓN: Agregar metadata con fecha ===
             data = {
                 "metadata": {
                     "last_updated": datetime.now().isoformat(),
                     "total_products": len(productos)
                 },
-                "changes": cambios_detectados, # Agregamos los cambios aquí
+                "changes": cambios_finales,
                 "products": productos
             }
             json_str = json.dumps(data, ensure_ascii=False)
@@ -214,6 +244,63 @@ class SincronizadorGitHub:
         except Exception as e:
             print(f"Error convirtiendo Excel: {e}")
             return False
+
+    def merge_cambios(self, historico, nuevos_detectados):
+        """
+        Mezcla cambios antiguos con los nuevos, actualiza si repiten 
+        y elimina los que tengan más de 7 días.
+        """
+        ahora = datetime.now()
+        limite_dias = 7
+        
+        # Estructura inicial si está vacío
+        if not historico: historico = {"nuevos": [], "precios": []}
+        if not nuevos_detectados: nuevos_detectados = {"nuevos": [], "precios": []}
+        
+        # 1. Función para limpiar por fecha
+        def es_valido(v):
+            if 'timestamp' not in v: return True # Si no tiene (antiguos), dejar
+            fecha_cambio = datetime.fromisoformat(v['timestamp'])
+            return (ahora - fecha_cambio).days < limite_dias
+
+        # 2. Procesar NUEVOS
+        # Usamos diccionario temporal para mergear por (codigo, unidad)
+        dict_nuevos = {}
+        # Cargar históricos válidos
+        for n in historico.get("nuevos", []):
+            if es_valido(n):
+                dict_nuevos[(n['codigo'], n.get('unidad', 'UND'))] = n
+        
+        # Agregar/Actualizar con los nuevos detectados
+        for n in nuevos_detectados.get("nuevos", []):
+            key = (n['codigo'], n.get('unidad', 'UND'))
+            n['timestamp'] = ahora.isoformat()
+            dict_nuevos[key] = n
+            
+        # 3. Procesar PRECIOS
+        dict_precios = {}
+        for p in historico.get("precios", []):
+            if es_valido(p):
+                dict_precios[(p['codigo'], p.get('unidad', 'UND'))] = p
+                
+        for p in nuevos_detectados.get("precios", []):
+            key = (p['codigo'], p.get('unidad', 'UND'))
+            p['timestamp'] = ahora.isoformat()
+            
+            if key in dict_precios:
+                # Si ya existía una novedad de precio esta semana, actualizamos el precio_nuevo
+                # pero MANTENEMOS el precio_antiguo original de la semana para que se vea el cambio total
+                dict_precios[key]['precio_nuevo'] = p['precio_nuevo']
+                dict_precios[key]['tipo'] = "subio" if float(p['precio_nuevo']) > float(dict_precios[key]['precio_antiguo']) else "bajo"
+                dict_precios[key]['timestamp'] = ahora.isoformat() # Renovar tiempo
+            else:
+                dict_precios[key] = p
+                
+        # 4. Reconvertir a listas
+        return {
+            "nuevos": list(dict_nuevos.values()),
+            "precios": list(dict_precios.values())
+        }
     
     
     def procesar_excel(self, ruta_excel):

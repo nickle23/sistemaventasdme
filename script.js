@@ -30,16 +30,9 @@ class ProductSearch {
         if (!text && text !== 0 && text !== '') return '';
 
         // Convertir a string
-        let str = String(text);
-
-        // Actualizar contador inicial en el header
-        const headerCount = document.getElementById('productCount');
-        if (headerCount && this.grouped) {
-            headerCount.textContent = `Total de Productos: ${this.grouped.size}`;
-        }
-
-        // Minúsculas y quitar acentos
-        str = str.toLowerCase()
+        // Convertir a string, quitar acentos y minúsculas
+        let str = String(text)
+            .toLowerCase()
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "");
 
@@ -397,10 +390,7 @@ class ProductSearch {
         }
 
         // Actualizar contador del header
-        const headerCount = document.getElementById('productCount');
-        if (headerCount) {
-            headerCount.textContent = `Total de Productos: ${this.grouped.size}`;
-        }
+        this.updateStats();
 
         if (homePanel) homePanel.style.display = 'block';
         if (countElement) countElement.textContent = `${this.grouped.size} productos disponibles`;
@@ -417,7 +407,6 @@ class ProductSearch {
         if (homePanel) homePanel.style.display = 'none';
     }
 
-    // ===== CARGA DE PRODUCTOS =====
     // ===== CARGA DE PRODUCTOS =====
     async loadProducts() {
         const startTime = performance.now();
@@ -1124,8 +1113,8 @@ class ProductSearch {
 
     updateStats() {
         const countElement = document.getElementById('productCount');
-        if (countElement) {
-            countElement.textContent = this.grouped.size;
+        if (countElement && this.grouped) {
+            countElement.textContent = `Total de Productos: ${this.grouped.size}`;
         }
     }
 
