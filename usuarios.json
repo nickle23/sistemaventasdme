@@ -95,7 +95,25 @@
       "name": "LUZ ANGELICA CEL",
       "active": true,
       "date": "2026-01-10 15:05"
+    },
+    {
+      "id": "USR-FQ75-6EYG",
+      "name": "ADRIAN CEL",
+      "active": true,
+      "date": "2026-01-10 16:53"
+    },
+    {
+      "id": "USR-CETL-YPHE",
+      "name": "PC ALMACEN PRINCIPAL",
+      "active": true,
+      "date": "2026-01-10 16:55"
+    },
+    {
+      "id": "USR-ZMCM-MRY9",
+      "name": "JOSHUA CEL",
+      "active": true,
+      "date": "2026-01-10 16:55"
     }
   ],
-  "last_updated": "2026-01-10T15:05:25.939759"
+  "last_updated": "2026-01-10T16:55:25.688701"
 }
