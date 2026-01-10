@@ -89,7 +89,13 @@
       "name": "GERAL CEL",
       "active": true,
       "date": "2026-01-10 13:53"
+    },
+    {
+      "id": "USR-K623-3E8B",
+      "name": "LUZ ANGELICA CEL",
+      "active": true,
+      "date": "2026-01-10 15:05"
     }
   ],
-  "last_updated": "2026-01-10T13:53:26.886714"
+  "last_updated": "2026-01-10T15:05:25.939759"
 }
