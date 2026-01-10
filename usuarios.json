@@ -83,7 +83,13 @@
       "name": "MONICA CEL",
       "active": true,
       "date": "2026-01-10 13:41"
+    },
+    {
+      "id": "USR-M2R7-4B87",
+      "name": "GERAL CEL",
+      "active": true,
+      "date": "2026-01-10 13:53"
     }
   ],
-  "last_updated": "2026-01-10T13:41:33.219860"
+  "last_updated": "2026-01-10T13:53:26.886714"
 }
