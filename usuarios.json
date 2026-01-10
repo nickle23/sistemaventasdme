@@ -25,12 +25,6 @@
       "date": "2025-12-17 16:04"
     },
     {
-      "id": "USR-4J7S-USXC",
-      "name": "JOSELIN IPHONE",
-      "active": true,
-      "date": "2025-12-17 16:29"
-    },
-    {
       "id": "USR-PA6Y-XPEE",
       "name": "KYLIE RUTA",
       "active": true,
@@ -67,11 +61,11 @@
       "date": "2026-01-10 09:06"
     },
     {
-      "id": "USR-MHJN-YW2U",
-      "name": "JOSELIN CEL",
+      "id": "USR-85QU-LKBU",
+      "name": "LEYDI CEL",
       "active": true,
-      "date": "2026-01-10 13:02"
+      "date": "2026-01-10 13:23"
     }
   ],
-  "last_updated": "2026-01-10T13:02:43.878900"
+  "last_updated": "2026-01-10T13:23:26.758706"
 }
