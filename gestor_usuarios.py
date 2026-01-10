@@ -56,6 +56,15 @@ class GestorUsuariosApp:
         
         ttk.Label(toolbar_frame, text="Usuarios Registrados:", font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT)
         
+        # BUSCADOR
+        search_container = ttk.Frame(toolbar_frame)
+        search_container.pack(side=tk.RIGHT)
+        
+        ttk.Label(search_container, text="🔍 Buscar:").pack(side=tk.LEFT, padx=5)
+        self.entry_busqueda = ttk.Entry(search_container, width=30)
+        self.entry_busqueda.pack(side=tk.LEFT, padx=5)
+        self.entry_busqueda.bind('<KeyRelease>', lambda e: self.filtrar_usuarios())
+        
         # Botones de Acción
         action_frame = ttk.Frame(main_frame)
         action_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
@@ -114,7 +123,7 @@ class GestorUsuariosApp:
         finally:
             self.menu.grab_release()
 
-    def cargar_usuarios(self):
+    def cargar_usuarios(self, filtro=None):
         for i in self.tree.get_children():
             self.tree.delete(i)
             
@@ -127,6 +136,12 @@ class GestorUsuariosApp:
                 for user in data.get('users', []):
                     estado = "✅ ACTIVO" if user.get('active', True) else "⛔ BLOQUEADO"
                     
+                    # Filtro
+                    if filtro:
+                        search_text = (user['name'] + user['id']).lower()
+                        if filtro.lower() not in search_text:
+                            continue
+
                     self.tree.insert('', tk.END, values=(
                         estado,
                         user['name'],
@@ -139,6 +154,10 @@ class GestorUsuariosApp:
                         
         except Exception as e:
             messagebox.showerror("Error", f"Error al cargar usuarios: {e}")
+
+    def filtrar_usuarios(self):
+        termino = self.entry_busqueda.get().strip()
+        self.cargar_usuarios(filtro=termino)
 
     def leer_json(self):
         if not os.path.exists(self.archivo_json):
