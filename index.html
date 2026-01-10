@@ -157,16 +157,16 @@
     </style>
 
     <!-- Preload para navegadores modernos -->
-    <link rel="preload" href="styles.css?v=1768027721" as="style"
+    <link rel="preload" href="styles.css?v=1768028793" as="style"
         onload="this.onload=null;this.rel='stylesheet';document.querySelector('.app').classList.add('css-loaded')">
 
     <!-- Fallback para navegadores que no soportan preload -->
-    <link rel="stylesheet" href="styles.css?v=1768027721" media="print"
+    <link rel="stylesheet" href="styles.css?v=1768028793" media="print"
         onload="this.media='all';this.onload=null;if(!document.querySelector('.app').classList.contains('css-loaded'))document.querySelector('.app').classList.add('css-loaded')">
 
     <!-- Fallback para navegadores sin JavaScript -->
     <noscript>
-        <link rel="stylesheet" href="styles.css?v=1768027721">
+        <link rel="stylesheet" href="styles.css?v=1768028793">
         <style>
             .app {
                 opacity: 1 !important;
@@ -227,7 +227,7 @@
 
             <!-- Panel de Inicio - Búsquedas Recientes y Populares -->
             <div id="homePanel" class="home-panel">
-                
+
                 <!-- SECCIÓN DE NOVEDADES (Oculta por defecto) -->
                 <div id="changesPanel" class="changes-panel" style="display: none;">
                     <div class="changes-header">
@@ -235,8 +235,8 @@
                             <i class="fas fa-bell"></i>
                             Novedades y Cambios
                         </div>
-                        <button class="clear-btn" style="position: static; display: block; font-size: 12px;" onclick="productSearch.hideChanges()">
-                            <i class="fas fa-times"></i> Ocultar
+                        <button id="toggleChangesBtn" class="toggle-btn" onclick="productSearch.toggleChanges()">
+                            <i class="fas fa-chevron-up"></i>
                         </button>
                     </div>
                     <div id="changesGrid" class="changes-grid">
@@ -294,8 +294,8 @@
 
 
     <!-- ===== SISTEMA DE SEGURIDAD ===== -->
-    <script src="auth.js?v=1768027721"></script>
-    <script src="script.js?v=1768027721"></script> <!-- ← Agrega versión -->
+    <script src="auth.js?v=1768028793"></script>
+    <script src="script.js?v=1768028793"></script> <!-- ← Agrega versión -->
 </body>
 
 </html>

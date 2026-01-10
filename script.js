@@ -564,10 +564,15 @@ class ProductSearch {
         console.log(`🔔 Novedades mostradas: ${validNuevos.length} nuevos, ${validPrecios.length} cambios de precio.`);
     }
 
-    hideChanges() {
+    toggleChanges() {
         const panel = document.getElementById('changesPanel');
-        if (panel) panel.style.display = 'none';
-        // Opcional: Guardar en localStorage que ya se vio, para no mostrar hasta siguiente update
+        if (panel) {
+            panel.classList.toggle('collapsed');
+
+            // Opcional: Cambiar el icono o mostrar mensaje en consola
+            const isCollapsed = panel.classList.contains('collapsed');
+            console.log(`🔔 Panel de novedades ${isCollapsed ? 'contraído' : 'expandido'}`);
+        }
     }
 
     createChangeCard(item, type) {
