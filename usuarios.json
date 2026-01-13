@@ -1,4 +1,7 @@
 {
+  "settings": {
+    "security_enabled": true
+  },
   "users": [
     {
       "id": "USR-MN2R-DF49",

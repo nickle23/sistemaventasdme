@@ -28,6 +28,12 @@ class GestorUsuariosApp:
         
         lbl_title = ttk.Label(header_frame, text="🛡️ Panel de Seguridad - Control de Accesos", style="Header.TLabel")
         lbl_title.pack(side=tk.LEFT)
+
+        # SWITCH MAESTRO DE SEGURIDAD
+        self.btn_security_switch = tk.Button(header_frame, text="🔒 SISTEMA CERRADO", 
+                                           bg="#ef4444", fg="white", font=("Segoe UI", 9, "bold"),
+                                           command=self.toggle_security_mode, padx=10)
+        self.btn_security_switch.pack(side=tk.RIGHT, padx=10)
         
         # Frame de Entrada
         input_frame = ttk.LabelFrame(main_frame, text="Nuevo Acceso", padding="15")
@@ -116,6 +122,41 @@ class GestorUsuariosApp:
         self.tree.bind("<Button-3>", self.mostrar_menu)
         
         self.cargar_usuarios()
+        self.cargar_configuracion_seguridad()
+
+    def cargar_configuracion_seguridad(self):
+        data = self.leer_json()
+        settings = data.get('settings', {'security_enabled': True})
+        is_secure = settings.get('security_enabled', True)
+        self.actualizar_boton_seguridad(is_secure)
+
+    def actualizar_boton_seguridad(self, is_secure):
+        if is_secure:
+            self.btn_security_switch.config(text="🔒 SISTEMA CERRADO (Solo Autorizados)", bg="#ef4444", fg="white")
+        else:
+            self.btn_security_switch.config(text="🔓 ACCESO LIBRE (Público)", bg="#22c55e", fg="white")
+
+    def toggle_security_mode(self):
+        data = self.leer_json()
+        # Obtener estado actual
+        current_settings = data.get('settings', {'security_enabled': True})
+        current_state = current_settings.get('security_enabled', True)
+        
+        # Invertir estado
+        new_state = not current_state
+        
+        msg = "🔓 ¿ABRIR EL SISTEMA?\n\nCualquier persona con el enlace podrá entrar sin código." if not new_state else "🔒 ¿CERRAR EL SISTEMA?\n\nSolo podrán entrar los usuarios con código autorizado."
+        
+        if messagebox.askyesno("Cambiar Modo de Seguridad", msg):
+            # Guardar
+            if 'settings' not in data:
+                data['settings'] = {}
+            data['settings']['security_enabled'] = new_state
+            
+            if self.guardar_json(data):
+                self.actualizar_boton_seguridad(new_state)
+                estado_texto = "ABIERTO (Público)" if not new_state else "CERRADO (Seguro)"
+                messagebox.showinfo("Éxito", f"El sistema ahora está: {estado_texto}\n\n⚠️ RECUERDA SUBIR 'usuarios.json' A GITHUB")
 
     def mostrar_menu(self, event):
         try:

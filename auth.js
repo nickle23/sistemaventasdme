@@ -37,19 +37,34 @@ class AuthSystem {
             const data = await response.json();
             const validUsers = data.users || [];
 
+            // 🔒 1. VERIFICAR INTERRUPTOR MAESTRO
+            const settings = data.settings || { security_enabled: true };
+            const isSecurityEnabled = settings.security_enabled !== false; // Default True
+
             // Buscar si mi ID está en la lista
             const user = validUsers.find(u => u.id === this.deviceId);
 
             if (user) {
+                // CASO A: Usuario Registrado (Siempre entra, salvo ban)
                 if (user.active !== false) {
                     this.permitAccess(user);
                 } else {
-                    // Está en la lista pero Desactivado (BANEADO)
-                    this.denyAccess(true);
+                    this.denyAccess(true); // Baneado explícitamente
                 }
             } else {
-                // No está en la lista (USUARIO NUEVO)
-                this.denyAccess(false);
+                // CASO B: Usuario Nuevo / Desconocido
+                if (!isSecurityEnabled) {
+                    // 🔓 MODO LIBRE: Permitir acceso pero registrar como INVITADO
+                    const guestUser = {
+                        id: this.deviceId,
+                        name: 'INVITADO (Modo Libre)',
+                        role: 'GUEST'
+                    };
+                    this.permitAccess(guestUser, true); // true = isGuest
+                } else {
+                    // 🔒 MODO CERRADO: Bloquear
+                    this.denyAccess(false);
+                }
             }
 
         } catch (error) {
@@ -127,7 +142,7 @@ class AuthSystem {
         }
     }
 
-    permitAccess(user) {
+    permitAccess(user, isGuest = false) {
         this.authorized = true;
         this.currentUser = user;
         console.log(`✅ Bienvenido ${user.name}`);
@@ -149,7 +164,8 @@ class AuthSystem {
         this.enableVisualSecurity(user);
 
         // 📝 REGISTRAR INGRESO
-        this.sendLog('INGRESO_EXITOSO', this.getDetailedDeviceInfo());
+        const eventType = isGuest ? 'INGRESO_LIBRE' : 'INGRESO_EXITOSO';
+        this.sendLog(eventType, this.getDetailedDeviceInfo());
     }
 
     enableVisualSecurity(user) {

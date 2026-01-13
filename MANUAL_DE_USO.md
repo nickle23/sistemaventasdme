@@ -40,7 +40,23 @@ Cada vez que quieras dar acceso a un vendedor nuevo o bloquear a alguien:
 
 ---
 
-## 🔴 CASO 3: SI ALGO SE VE MAL (Mantenimiento)
+## 🟣 CASO 3: CONTROL MAESTRO DE SEGURIDAD (Nuevo)
+
+Ahora puedes abrir o cerrar el sistema con un solo clic desde el Gestor:
+
+1. **Botón Superior Derecha**:
+   - **🔴 SISTEMA CERRADO**: Solo entran usuarios con código autorizado. (Modo Normal)
+   - **🟢 ACCESO LIBRE**: Cualquier persona con el link puede entrar.
+2. **Registro de Invitados**:
+   - Incluso en "Acceso Libre", el sistema registra quién entra.
+   - Aparecerán en tu reporte como `[INVITADO] ID-xxxxx`.
+3. **Para aplicar cambios**:
+   - Cambia el interruptor en el Gestor.
+   - Sube **`usuarios.json`** a GitHub.
+
+---
+
+## 🔴 CASO 4: SI ALGO SE VE MAL (Mantenimiento)
 
 Si ves que el diseño está raro, desalineado o antiguo en los celulares:
 
