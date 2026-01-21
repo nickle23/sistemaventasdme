@@ -1023,9 +1023,37 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: var(--space-3);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 8000px;
-    /* Incrementado para evitar truncamiento en móviles */
+    max-height: 60vh;
+    /* Altura máxima adaptable */
+    overflow-y: auto;
+    /* Activar scroll vertical */
+    padding-right: var(--space-2);
+    /* Espacio para el scroll */
     opacity: 1;
+
+    /* Scrollbar Personalizado */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+/* Estilos Webkit (Chrome, Edge, Safari) */
+.changes-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.changes-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.changes-grid::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 20px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.changes-grid::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-muted);
 }
 
 .changes-panel.collapsed .changes-grid {

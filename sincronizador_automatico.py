@@ -46,6 +46,17 @@ class SincronizadorGitHub:
         if not os.path.exists(self.carpeta_excel):
             os.makedirs(self.carpeta_excel)
             print(f"✅ Carpeta '{self.carpeta_excel}/' creada")
+            
+    def _normalizar_codigo(self, val):
+        """
+        Normaliza cualquier valor de código a string limpio
+        Se asegura que "123.0" se convierta en "123"
+        """
+        s = str(val).strip()
+        if s.endswith('.0'):
+            return s[:-2]
+        return s
+
     
     def encriptar_datos(self, data_json):
         """Encripta el string JSON usando AES"""
@@ -98,12 +109,12 @@ class SincronizadorGitHub:
             # 2. Cargar respaldo
             df_anterior = pd.read_excel(ultimo_backup)
             
-            # Normalizar columnas clave (Código como string)
-            # Normalizar columnas clave
-            df_actual['Código'] = df_actual['Código'].astype(str).str.strip()
+            # Normalizar columnas clave usando el método centralizado
+            # Aplicamos la función fila por fila o vectorizada
+            df_actual['Código'] = df_actual['Código'].apply(self._normalizar_codigo)
             df_actual['Unidad'] = df_actual['Unidad'].astype(str).str.strip()
             
-            df_anterior['Código'] = df_anterior['Código'].astype(str).str.strip()
+            df_anterior['Código'] = df_anterior['Código'].apply(self._normalizar_codigo)
             df_anterior['Unidad'] = df_anterior['Unidad'].astype(str).str.strip()
             
             # Crear claves únicas (Código + Unidad) para soportar variantes
@@ -189,11 +200,10 @@ class SincronizadorGitHub:
             nombre_archivo = os.path.basename(ruta_excel)
             cambios_detectados = self.detectar_cambios(df, nombre_actual=nombre_archivo)
             
-            # Procesar productos
             productos = []
             for _, fila in df.iterrows():
                 producto = {
-                    'codigo': str(fila.get('Código', '')).strip(),
+                    'codigo': self._normalizar_codigo(fila.get('Código', '')),
                     'descripcion': str(fila.get('Descripcion', '')).strip(),
                     'unidad': str(fila.get('Unidad', '')).strip(),
                     'precio': str(fila.get('Precio', '0')).strip(),
