@@ -115,7 +115,7 @@ class AuthSystem {
 
     // ===== LOGGER SISTEMA =====
     async sendLog(type, info = '') {
-        const URL = "https://script.google.com/macros/s/AKfycbyFsof3fG6qufbDTMZuYsbOQSJBaEbGBgYh0TYkn8ylGL9SGwf1dLFF7eVOxc4kBJu6/exec";
+        const URL = "https://script.google.com/macros/s/AKfycbwejIYGp794caGIZCfutZxF7I7LaxIyhbPXYMYf6_I4E3NnMRpFut5TWTIE4VSaEB4/exec";
 
         if (!this.currentUser) return;
 
