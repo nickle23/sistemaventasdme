@@ -116,7 +116,13 @@
       "name": "KIARA CEL",
       "active": true,
       "date": "2026-01-21 23:55"
+    },
+    {
+      "id": "USR-DYE3-D4TC",
+      "name": "KIARA PERS CEL",
+      "active": true,
+      "date": "2026-01-22 14:36"
     }
   ],
-  "last_updated": "2026-01-21T23:55:59.965075"
+  "last_updated": "2026-01-22T14:36:17.900801"
 }
