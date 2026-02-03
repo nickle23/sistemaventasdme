@@ -1,403 +1,318 @@
 import os
+import sys
+
+# 1. Mensaje de vida inmediato e IRRECHAZABLE
+print(">> SISTEMA INICIANDO... POR FAVOR ESPERA.", flush=True)
+
 import json
-import pandas as pd
 import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 import shutil
+import base64
+import glob
+import re
+import math
 from datetime import datetime
 
+# =============================================================================
+# CONFIGURACIÓN UNIVERSAL (AUTO-REPARABLE)
+# =============================================================================
 
+# 2. Configuración de terminal simplificada
+if sys.platform == "win32":
+    try: os.system('chcp 65001 > nul')
+    except: pass
+
+# 2. Verificación inteligente de dependencias
+def verificar_librerias():
+    faltantes = []
+    try: import pandas as pd
+    except ImportError: faltantes.append("pandas")
+    try: from watchdog.observers import Observer
+    except ImportError: faltantes.append("watchdog")
+    try: from Crypto.Cipher import AES
+    except ImportError: faltantes.append("pycryptodome")
+    
+    if faltantes:
+        print("\n" + "!"*60)
+        print("ERROR: Faltan librerias necesarias.")
+        print(f"Instala esto: pip install {' '.join(faltantes)} openpyxl")
+        print("!"*60 + "\n")
+        time.sleep(5)
+        sys.exit(1)
+
+verificar_librerias()
+import pandas as pd
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
-import base64
+from Crypto.Util.Padding import pad, unpad
+
+# Intento de importar la clave secreta
 try:
     from secret import SECRET_KEY
 except ImportError:
     SECRET_KEY = "MundoEscolar$2025_Seguro"
 
-import glob
+# =============================================================================
+# CLASES DEL SISTEMA
+# =============================================================================
 
-class ManejadorExcel(FileSystemEventHandler):
-    def __init__(self, sincronizador):
-        self.sincronizador = sincronizador
-        self.ultimo_archivo = None
-    
-    def on_modified(self, event):
-        if event.is_directory:
-            return
-            
-        if event.src_path.endswith(('.xlsx', '.xls')):
-            archivo_actual = os.path.basename(event.src_path)
-            
-            # Evitar múltiples triggers del mismo archivo
-            if archivo_actual != self.ultimo_archivo:
-                print(f"\n🔄 Cambio detectado en: {archivo_actual}")
-                self.ultimo_archivo = archivo_actual
-                self.sincronizador.procesar_excel(event.src_path)
-
-class SincronizadorGitHub:
+class SincronizadorUniversal:
     def __init__(self):
-        self.carpeta_excel = "excel"
-        self.archivo_json = "productos.json"
-        self.crear_carpetas()
+        # Rutas dinámicas basadas en la ubicación del script
+        self.base_path = os.path.dirname(os.path.abspath(__file__))
+        self.carpeta_excel = os.path.join(self.base_path, "excel")
+        self.archivo_json = os.path.join(self.base_path, "productos.json")
+        self.archivo_index = os.path.join(self.base_path, "index.html")
         
-    def crear_carpetas(self):
+        self.asegurar_entorno()
+        
+    def asegurar_entorno(self):
+        """Crea las carpetas necesarias si no existen"""
         if not os.path.exists(self.carpeta_excel):
-            os.makedirs(self.carpeta_excel)
-            print(f"✅ Carpeta '{self.carpeta_excel}/' creada")
-            
+            try:
+                os.makedirs(self.carpeta_excel)
+                self.log(f"Carpeta de respaldo '{os.path.basename(self.carpeta_excel)}' creada")
+            except:
+                pass
+
+    def log(self, mensaje, tipo="INFO"):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        prefix = ">>" if tipo == "INFO" else "(!)"
+        # Eliminar cualquier emoji residual por seguridad extrema
+        mensaje_limpio = mensaje.encode('ascii', 'ignore').decode('ascii') if tipo != "INFO" else mensaje
+        print(f"[{timestamp}] {prefix} {mensaje}")
+
     def _normalizar_codigo(self, val):
-        """
-        Normaliza cualquier valor de código a string limpio
-        Se asegura que "123.0" se convierta en "123"
-        """
         s = str(val).strip()
-        if s.endswith('.0'):
-            return s[:-2]
+        if s.endswith('.0'): s = s[:-2]
         return s
 
-    
-    def encriptar_datos(self, data_json):
-        """Encripta el string JSON usando AES"""
+    def _limpiar_datos_profundo(self, obj):
+        """Elimina NaNs e Infs de forma recursiva para evitar JSON inválido"""
+        if isinstance(obj, list):
+            return [self._limpiar_datos_profundo(i) for i in obj]
+        elif isinstance(obj, dict):
+            return {k: self._limpiar_datos_profundo(v) for k, v in obj.items()}
+        elif isinstance(obj, float):
+            if math.isnan(obj) or math.isinf(obj):
+                return 0.0
+        return obj
+
+    def encriptar(self, data_json):
         key = SECRET_KEY.encode('utf-8')
         key = key[:32].ljust(32, b'\0') 
-        
         cipher = AES.new(key, AES.MODE_ECB)
         data_bytes = data_json.encode('utf-8')
         encrypted = cipher.encrypt(pad(data_bytes, AES.block_size))
         return base64.b64encode(encrypted).decode('utf-8')
 
-    def desencriptar_datos(self, contenido_encriptado):
-        """Desencripta datos AES"""
+    def desencriptar(self, contenido_encriptado):
         try:
             key = SECRET_KEY.encode('utf-8')
             key = key[:32].ljust(32, b'\0')
-            
             cipher = AES.new(key, AES.MODE_ECB)
             encrypted_bytes = base64.b64decode(contenido_encriptado)
-            from Crypto.Util.Padding import unpad
             decrypted = unpad(cipher.decrypt(encrypted_bytes), AES.block_size)
             return decrypted.decode('utf-8')
-        except Exception as e:
-            print(f"Error desencriptando: {e}")
+        except:
             return None
 
     def detectar_cambios(self, df_actual, nombre_actual=None):
-        """
-        Compara el DataFrame actual con el último Excel de respaldo.
-        exclude_name: Nombre del archivo actual para ignorarlo si existe en respaldos
-        """
         try:
-            # 1. Buscar el archivo más reciente en la carpeta excel/
             patron = os.path.join(self.carpeta_excel, "*.xls*")
             archivos = glob.glob(patron)
-            
-            # FILTRAR: Ignorar el archivo que tenga el mismo nombre que el actual
             if nombre_actual:
                 archivos = [f for f in archivos if os.path.basename(f) != nombre_actual]
             
-            if not archivos:
-                print("(!) No hay respaldos validos anteriores para comparar.")
-                return None
-                
-            # Ordenar por fecha de modificación (el más nuevo al final)
+            if not archivos: return None
+            
             ultimo_backup = max(archivos, key=os.path.getmtime)
-            print(f"[DEBUG] Archivo actual: {len(df_actual)} filas")
-            print(f"[DEBUG] Comparando con respaldo valido: {os.path.basename(ultimo_backup)}")
+            df_anterior = pd.read_excel(ultimo_backup).fillna('')
             
-            # 2. Cargar respaldo
-            df_anterior = pd.read_excel(ultimo_backup)
-            
-            # Normalizar columnas clave usando el método centralizado
-            # Aplicamos la función fila por fila o vectorizada
+            # Normalización
             df_actual['Código'] = df_actual['Código'].apply(self._normalizar_codigo)
             df_actual['Unidad'] = df_actual['Unidad'].astype(str).str.strip()
-            
             df_anterior['Código'] = df_anterior['Código'].apply(self._normalizar_codigo)
             df_anterior['Unidad'] = df_anterior['Unidad'].astype(str).str.strip()
             
-            # Crear claves únicas (Código + Unidad) para soportar variantes
-            # Esto evita que una unidad (ej: Docena) sobrescriba a otra (ej: Unidad)
-            dict_actual = {}
-            codigos_actuales = set()
-            for _, row in df_actual.iterrows():
-                key = (row['Código'], row['Unidad'])
-                codigo = row['Código']
-                dict_actual[key] = row.to_dict()
-                codigos_actuales.add(codigo)
-                
-            dict_anterior = {}
-            codigos_anteriores = set()
-            for _, row in df_anterior.iterrows():
-                key = (row['Código'], row['Unidad'])
-                codigo = row['Código']
-                dict_anterior[key] = row.to_dict()
-                codigos_anteriores.add(codigo)
+            codigos_anteriores = set(df_anterior['Código'])
             
-            cambios = {
-                "nuevos": [],
-                "precios": []
-            }
+            dict_actual = {(r['Código'], r['Unidad']): r.to_dict() for _, r in df_actual.iterrows()}
+            dict_anterior = {(r['Código'], r['Unidad']): r.to_dict() for _, r in df_anterior.iterrows()}
             
-            # 3. Detectar NUEVOS y CAMBIOS
+            cambios = {"nuevos": [], "precios": []}
+            
             for key, datos in dict_actual.items():
                 codigo, unidad = key
-                
                 if key not in dict_anterior:
-                    # Verificar si es producto completamente nuevo o solo nueva variante
-                    es_producto_nuevo = codigo not in codigos_anteriores
-                    
                     cambios["nuevos"].append({
                         "codigo": codigo,
                         "descripcion": str(datos.get('Descripcion', '')).strip(),
                         "precio": str(datos.get('Precio', '0')).strip(),
                         "unidad": unidad,
-                        "es_producto_nuevo": es_producto_nuevo,  # True si el código no existía antes
-                        "tipo_cambio": "producto_nuevo" if es_producto_nuevo else "nueva_unidad"
+                        "es_producto_nuevo": codigo not in codigos_anteriores,
+                        "tipo_cambio": "producto_nuevo" if codigo not in codigos_anteriores else "nueva_unidad"
                     })
                 else:
-                    # Existe, verificar PRECIO
                     try:
-                        precio_nuevo = float(str(datos.get('Precio', '0')))
-                        precio_antiguo = float(str(dict_anterior[key].get('Precio', '0')))
-                        
-                        # Si hay diferencia significativa
-                        if abs(precio_nuevo - precio_antiguo) > 0.01:
-                            tipo = "subio" if precio_nuevo > precio_antiguo else "bajo"
+                        p_nuevo = float(str(datos.get('Precio', '0')))
+                        p_viejo = float(str(dict_anterior[key].get('Precio', '0')))
+                        if abs(p_nuevo - p_viejo) > 0.01:
                             cambios["precios"].append({
                                 "codigo": codigo,
                                 "descripcion": str(datos.get('Descripcion', '')).strip(),
-                                "precio_antiguo": f"{precio_antiguo:.2f}",
-                                "precio_nuevo": f"{precio_nuevo:.2f}",
+                                "precio_antiguo": f"{p_viejo:.2f}",
+                                "precio_nuevo": f"{p_nuevo:.2f}",
                                 "unidad": unidad,
-                                "tipo": tipo
+                                "tipo": "subio" if p_nuevo > p_viejo else "bajo"
                             })
-                    except:
-                        pass # Si falla conversión, ignorar
-                        
-            count_nuevos = len(cambios["nuevos"])
-            count_precios = len(cambios["precios"])
+                    except: pass
             
-            if count_nuevos > 0 or count_precios > 0:
-                print(f"CAMBIOS DETECTADOS: {count_nuevos} Nuevos | {count_precios} Cambios de Precio")
-                return cambios
-            else:
-                print("Sin cambios relevantes respecto al ultimo respaldo.")
-                return None
-
+            return cambios if cambios["nuevos"] or cambios["precios"] else None
         except Exception as e:
-            print(f"Warning al comparar excel: {e}")
+            self.log(f"Error comparando archivos: {e}", "WARN")
             return None
 
-    def convertir_excel_a_json(self, ruta_excel):
-        """Convierte Excel a JSON ENCRIPTADO"""
+    def merge_cambios(self, historico, nuevos):
+        ahora = datetime.now()
+        limite = 7
+        if not historico: historico = {"nuevos": [], "precios": []}
+        if not nuevos: nuevos = {"nuevos": [], "precios": []}
+        
+        def es_valido(v):
+            if 'timestamp' not in v: return True
+            try:
+                return (ahora - datetime.fromisoformat(v['timestamp'])).days < limite
+            except: 
+                return True
+
+        # Merge de productos nuevos
+        dict_n = {(n['codigo'], n.get('unidad', 'UND')): n for n in historico.get("nuevos", []) if es_valido(n)}
+        for n in nuevos.get("nuevos", []):
+            n['timestamp'] = ahora.isoformat()
+            dict_n[(n['codigo'], n.get('unidad', 'UND'))] = n
+            
+        # Merge de precios
+        dict_p = {(p['codigo'], p.get('unidad', 'UND')): p for p in historico.get("precios", []) if es_valido(p)}
+        for p in nuevos.get("precios", []):
+            p['timestamp'] = ahora.isoformat()
+            key = (p['codigo'], p.get('unidad', 'UND'))
+            if key in dict_p:
+                dict_p[key]['precio_nuevo'] = p['precio_nuevo']
+                dict_p[key]['tipo'] = "subio" if float(p['precio_nuevo']) > float(dict_p[key]['precio_antiguo']) else "bajo"
+                dict_p[key]['timestamp'] = ahora.isoformat()
+            else:
+                dict_p[key] = p
+                
+        return {"nuevos": list(dict_n.values()), "precios": list(dict_p.values())}
+
+    def actualizar_version_index(self):
         try:
-            print("Leyendo archivo Excel...")
-            df = pd.read_excel(ruta_excel)
+            if not os.path.exists(self.archivo_index): return
+            with open(self.archivo_index, 'r', encoding='utf-8') as f: content = f.read()
+            nueva_v = f"v={int(time.time())}"
+            content = re.sub(r'v=[\w\.]+', nueva_v, content)
+            with open(self.archivo_index, 'w', encoding='utf-8') as f: f.write(content)
+            self.log("Control de cache (index.html) actualizado")
+        except: pass
+
+    def procesar(self, ruta_excel):
+        self.log(f"Procesando: {os.path.basename(ruta_excel)}")
+        try:
+            df = pd.read_excel(ruta_excel).fillna('')
+            df = df.replace([float('inf'), float('-inf')], 0)
             
-            # Detectar cambios ANTES de procesar (Pasamos el nombre para excluirlo de la busqueda)
             nombre_archivo = os.path.basename(ruta_excel)
-            cambios_detectados = self.detectar_cambios(df, nombre_actual=nombre_archivo)
+            cambios_det = self.detectar_cambios(df, nombre_actual=nombre_archivo)
             
+            # RESUMEN DE CAMBIOS EN CONSOLA
+            if cambios_det:
+                n_nuevos = len(cambios_det.get("nuevos", []))
+                n_precios = len(cambios_det.get("precios", []))
+                if n_nuevos > 0: self.log(f"Detectados {n_nuevos} productos nuevos")
+                if n_precios > 0: self.log(f"Detectados {n_precios} cambios de precio")
+            else:
+                self.log("No se detectaron cambios respecto al respaldo anterior")
+
             productos = []
             for _, fila in df.iterrows():
-                producto = {
+                productos.append({
                     'codigo': self._normalizar_codigo(fila.get('Código', '')),
                     'descripcion': str(fila.get('Descripcion', '')).strip(),
                     'unidad': str(fila.get('Unidad', '')).strip(),
                     'precio': str(fila.get('Precio', '0')).strip(),
                     'stock': str(fila.get('StActual', '0')).strip(),
                     'precio_unit': str(fila.get('Pr.Unit', '0')).strip()
-                }
-                productos.append(producto)
+                })
             
-            # --- LÓGICA ACUMULATIVA DE CAMBIOS (7 DÍAS) ---
-            historico_cambios = {"nuevos": [], "precios": []}
+            historico = {"nuevos": [], "precios": []}
             if os.path.exists(self.archivo_json):
                 try:
                     with open(self.archivo_json, 'r', encoding='utf-8') as f:
-                        contenido_anterior = f.read()
-                    json_anterior_str = self.desencriptar_datos(contenido_anterior)
-                    if json_anterior_str:
-                        data_anterior = json.loads(json_anterior_str)
-                        if "changes" in data_anterior and data_anterior["changes"]:
-                            historico_cambios = data_anterior["changes"]
-                except Exception as e:
-                    print(f"Nota: No se pudieron recuperar cambios previos: {e}")
+                        dec = self.desencriptar(f.read())
+                        if dec:
+                            old_data = json.loads(dec)
+                            historico = old_data.get("changes", historico)
+                except: pass
 
-            # Merge y Limpieza de cambios
-            cambios_finales = self.merge_cambios(historico_cambios, cambios_detectados)
-            
-            # Convertir a String JSON
             data = {
-                "metadata": {
-                    "last_updated": datetime.now().isoformat(),
-                    "total_products": len(productos)
-                },
-                "changes": cambios_finales,
+                "metadata": {"last_updated": datetime.now().isoformat(), "total_products": len(productos)},
+                "changes": self.merge_cambios(historico, cambios_det),
                 "products": productos
             }
-            json_str = json.dumps(data, ensure_ascii=False)
             
-            # ENCRIPTAR
-            print("Encriptando datos con AES-256...")
-            contenido_seguro = self.encriptar_datos(json_str)
+            # Limpieza final de seguridad anti-NaN
+            data = self._limpiar_datos_profundo(data)
             
-            # Guardar archivo encriptado (aunque se llame .json es texto cifrado)
             with open(self.archivo_json, 'w', encoding='utf-8') as f:
-                f.write(contenido_seguro)
+                f.write(self.encriptar(json.dumps(data, ensure_ascii=False)))
             
-            print(f"JSON DE SEGURIDAD generado: {len(productos)} productos protegidos")
+            # Respaldo
+            ruta_dest = os.path.join(self.carpeta_excel, nombre_archivo)
+            if os.path.abspath(ruta_excel) != os.path.abspath(ruta_dest):
+                shutil.copy2(ruta_excel, ruta_dest)
+            
+            self.actualizar_version_index()
+            self.log(f"Exito: {len(productos)} productos protegidos")
+            print("-" * 50)
             return True
-            
         except Exception as e:
-            print(f"Error convirtiendo Excel: {e}")
+            self.log(f"Error critico: {str(e)}", "ERROR")
             return False
 
-    def merge_cambios(self, historico, nuevos_detectados):
-        """
-        Mezcla cambios antiguos con los nuevos, actualiza si repiten 
-        y elimina los que tengan más de 7 días.
-        """
-        ahora = datetime.now()
-        limite_dias = 7
-        
-        # Estructura inicial si está vacío
-        if not historico: historico = {"nuevos": [], "precios": []}
-        if not nuevos_detectados: nuevos_detectados = {"nuevos": [], "precios": []}
-        
-        # 1. Función para limpiar por fecha
-        def es_valido(v):
-            if 'timestamp' not in v: return True # Si no tiene (antiguos), dejar
-            fecha_cambio = datetime.fromisoformat(v['timestamp'])
-            return (ahora - fecha_cambio).days < limite_dias
-
-        # 2. Procesar NUEVOS
-        # Usamos diccionario temporal para mergear por (codigo, unidad)
-        dict_nuevos = {}
-        # Cargar históricos válidos
-        for n in historico.get("nuevos", []):
-            if es_valido(n):
-                dict_nuevos[(n['codigo'], n.get('unidad', 'UND'))] = n
-        
-        # Agregar/Actualizar con los nuevos detectados
-        for n in nuevos_detectados.get("nuevos", []):
-            key = (n['codigo'], n.get('unidad', 'UND'))
-            n['timestamp'] = ahora.isoformat()
-            dict_nuevos[key] = n
-            
-        # 3. Procesar PRECIOS
-        dict_precios = {}
-        for p in historico.get("precios", []):
-            if es_valido(p):
-                dict_precios[(p['codigo'], p.get('unidad', 'UND'))] = p
-                
-        for p in nuevos_detectados.get("precios", []):
-            key = (p['codigo'], p.get('unidad', 'UND'))
-            p['timestamp'] = ahora.isoformat()
-            
-            if key in dict_precios:
-                # Si ya existía una novedad de precio esta semana, actualizamos el precio_nuevo
-                # pero MANTENEMOS el precio_antiguo original de la semana para que se vea el cambio total
-                dict_precios[key]['precio_nuevo'] = p['precio_nuevo']
-                dict_precios[key]['tipo'] = "subio" if float(p['precio_nuevo']) > float(dict_precios[key]['precio_antiguo']) else "bajo"
-                dict_precios[key]['timestamp'] = ahora.isoformat() # Renovar tiempo
-            else:
-                dict_precios[key] = p
-                
-        # 4. Reconvertir a listas
-        return {
-            "nuevos": list(dict_nuevos.values()),
-            "precios": list(dict_precios.values())
-        }
-    
-    
-    def procesar_excel(self, ruta_excel):
-        """Procesa completo: Excel → JSON Encriptado"""
-        print("Iniciando procesamiento automatico...")
-        
-        # 1. Convertir Excel a JSON Encriptado
-        if not self.convertir_excel_a_json(ruta_excel):
-            return
-        
-        # 2. Copiar Excel a carpeta de respaldo
-        nombre_archivo = os.path.basename(ruta_excel)
-        ruta_destino = os.path.join(self.carpeta_excel, nombre_archivo)
-        
-        try:
-            shutil.copy2(ruta_excel, ruta_destino)
-            print(f"Excel respaldado en: {self.carpeta_excel}/")
-        except Exception as e:
-            print(f"No se pudo respaldar Excel: {e}")
-        
-        # 3. ACTUALIZAR VERSIÓN EN INDEX.HTML (CACHE BUSTING)
-        self.actualizar_version_index()
-
-        print("Proceso completado - Datos Protegidos y Listos para Subir!")
-        print("=" * 60)
-    
-    def actualizar_version_index(self):
-        """Actualiza el parámetro ?v=TIMESTAMP en index.html para evitar caché"""
-        try:
-            archivo_index = "index.html"
-            if not os.path.exists(archivo_index):
-                return
-                
-            print("🔄 Actualizando versión en index.html...")
-            
-            with open(archivo_index, 'r', encoding='utf-8') as f:
-                contenido = f.read()
-            
-            # Generar nueva versión basada en timestamp corto
-            nueva_version = f"v={int(time.time())}"
-            
-            # Reemplazar cualquier v=... por la nueva versión
-            import re
-            contenido_nuevo = re.sub(r'v=[\w\.]+', nueva_version, contenido)
-            
-            # Solo escribir si hubo cambios
-            if contenido != contenido_nuevo:
-                with open(archivo_index, 'w', encoding='utf-8') as f:
-                    f.write(contenido_nuevo)
-                print(f"Version actualizada a: {nueva_version}")
-            else:
-                print("La version ya estaba actualizada")
-                
-        except Exception as e:
-            print(f"No se pudo actualizar version en index.html: {e}")
-
-    def iniciar_vigilancia(self):
-        """Inicia la vigilancia automática"""
-        print("GENERADOR AUTOMATICO DE SEGURIDAD")
-        print("=" * 60)
-        print("Coloca tu Excel en esta carpeta")
-        print("El sistema detectara cambios automaticamente")
-        print("Tus datos seran ENCRIPTADOS en 'productos.json'")
-        print("Luego solo sube ese archivo a GitHub manualmente")
-        print("=" * 60)
-        
-        # Procesar Excel existente al iniciar
-        archivos_excel = [f for f in os.listdir('.') if f.endswith(('.xlsx', '.xls'))]
-        if archivos_excel:
-            print(f"Procesando Excel existente: {archivos_excel[0]}")
-            self.procesar_excel(archivos_excel[0])
-        
-        # Iniciar vigilancia
-        event_handler = ManejadorExcel(self)
-        observer = Observer()
-        observer.schedule(event_handler, '.', recursive=False)
-        observer.start()
-        
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            observer.stop()
-            print("\nSistema detenido")
-        
-        observer.join()
+class ManejadorExcel(FileSystemEventHandler):
+    def __init__(self, sinc): self.sinc = sinc; self.last = None
+    def on_modified(self, event):
+        if not event.is_directory and event.src_path.endswith(('.xlsx', '.xls')):
+            archivo = os.path.basename(event.src_path)
+            if archivo != self.last and not archivo.startswith('~$'):
+                self.last = archivo
+                time.sleep(1) # Esperar a que Excel suelte el archivo
+                self.sinc.procesar(event.src_path)
 
 if __name__ == "__main__":
-    sincronizador = SincronizadorGitHub()
-    sincronizador.iniciar_vigilancia()
+    print("="*60)
+    print("SISTEMA DE SINCRONIZACION UNIVERSAL - MUNDO ESCOLAR")
+    print("="*60)
+    
+    sinc = SincronizadorUniversal()
+    
+    # Procesar archivo inicial si existe
+    excels = [f for f in os.listdir('.') if f.endswith(('.xlsx', '.xls')) and not f.startswith('~$')]
+    if excels:
+        sinc.procesar(excels[0])
+    
+    print(">> Vigilando cambios en esta carpeta... (Presiona Ctrl+C para salir)")
+    
+    handler = ManejadorExcel(sinc)
+    observer = Observer()
+    observer.schedule(handler, '.', recursive=False)
+    observer.start()
+    
+    try:
+        while True: time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+        print("\n>> Sincronizador detenido.")
+    observer.join()

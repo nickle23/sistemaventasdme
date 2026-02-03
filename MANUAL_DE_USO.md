@@ -1,6 +1,6 @@
-# 📘 MANUAL DE USO - SISTEMA MUNDO ESCOLAR
+# 📘 MANUAL DE USO - SISTEMA MUNDO ESCOLAR (PREMIUM UNIVERSAL)
 
-Este documento explica paso a paso qué hacer para actualizar precios o gestionar usuarios.
+Este manual ha sido actualizado para reflejar la nueva era de **Súper Inteligencia** y **Universalidad** de tu sistema. Ahora es más robusto y capaz de autodiagnosticarse.
 
 ---
 
@@ -8,62 +8,43 @@ Este documento explica paso a paso qué hacer para actualizar precios o gestiona
 
 Cada vez que modifiques tu Excel principal con nuevos precios o stock:
 
-1. **Guarda tu Excel** en la carpeta del proyecto.
-2. **Ejecuta el Sincronizador**:
-   - Abre el archivo `sincronizador_automatico.py`.
-   - El programa detectará tu Excel, actualizará la base de datos y **actualizará la versión en `index.html` automáticamente**.
-   - **Lógica de Cambios**: El sistema ahora tiene **memoria de 7 días**. Los cambios se acumulan durante la semana y se borran automáticamente después del séptimo día.
-3. **Sube a GitHub (OBLIGATORIO SUBIR LOS DOS)**:
-   - Ve a tu repositorio en GitHub.com.
-   - Sube **`productos.json`** (El archivo de datos que ahora contiene el historial de 7 días).
-   - Sube **`index.html`** (El archivo que "avisa" al navegador que hay datos nuevos).
+1. **Guarda tu Excel** en la carpeta principal.
+2. **Ejecuta el Sincronizador Universal**:
+   - Abre `sincronizador_automatico.py`.
+   - **Autodiagnóstico**: El script verificará que tengas todo instalado. Si falta algo, te dará las instrucciones exactas.
+   - **Limpieza 360°**: El sistema ahora borra celdas vacías (`NaN`) y errores automáticamente para que el buscador nunca falle.
+   - **Versión Automática**: Se actualiza `index.html` solo para forzar la recarga en los celulares.
+3. **Sube a GitHub (OBLIGATORIO SUBIR AMBOS)**:
+   - Sube **`productos.json`** y **`index.html`**.
    
-> **⚠️ MUY IMPORTANTE:** Si solo subes el JSON y olvidas el HTML, tus clientes NO verán los cambios debido a la memoria del celular (caché). **Sube siempre los dos.**
+> **💡 CONSEJO UNIVERSAL:** Si cambias de PC, solo copia esta carpeta. El sistema detectará su nuevo entorno y funcionará igual de bien.
 
 ---
 
 ## 🟠 CASO 2: GESTIONAR USUARIOS (Autorizar o Bloquear)
 
-Cada vez que quieras dar acceso a un vendedor nuevo o bloquear a alguien:
-
-1. **Abre el Gestor**:
-   - Ejecuta el archivo `gestor_usuarios.py`.
-2. **Realiza los cambios**:
-   - **Buscador Práctico**: Usa la barra de búsqueda arriba a la derecha para encontrar vendedores por nombre o ID al instante.
-   - **Autorizar**: Agrega el nombre y el ID del nuevo usuario.
-   - **Editar ID**: Si un vendedor cambia de celular, selecciona su nombre y usa el botón **"Editar ID"** para actualizarlo sin borrar su registro.
-   - **Bloquear**: Selecciona uno y dale a "Bloquear/Desbloquear".
-3. **Sube a GitHub**:
-   - Ve a tu repositorio en GitHub.com.
-   - Sube el archivo **`usuarios.json`**.
-   - *Importante:* Sin subir este archivo, los cambios NO tendrán efecto en la web.
+1. **Abre el Gestor**: Ejecuta `gestor_usuarios.py`.
+2. **Realiza los cambios**: Agrega, bloquea o edita IDs (si el vendedor cambia de equipo).
+3. **Control Maestro**: Usa el botón superior para poner el sistema en **MODO LIBRE** o **MODO PROTEGIDO**.
+4. **Sube a GitHub**: Sube el archivo **`usuarios.json`**.
 
 ---
 
-## 🟣 CASO 3: CONTROL MAESTRO DE SEGURIDAD (Nuevo)
+## 🟣 CASO 3: VISUALIZACIÓN Y SEGURIDAD (Laptop Nueva)
 
-Ahora puedes abrir o cerrar el sistema con un solo clic desde el Gestor:
+Debido a la seguridad de los navegadores modernos en computadoras nuevas:
 
-1. **Botón Superior Derecha**:
-   - **🔴 SISTEMA CERRADO**: Solo entran usuarios con código autorizado. (Modo Normal)
-   - **🟢 ACCESO LIBRE**: Cualquier persona con el link puede entrar.
-2. **Registro de Invitados**:
-   - Incluso en "Acceso Libre", el sistema registra quién entra.
-   - Aparecerán en tu reporte como `[INVITADO] ID-xxxxx`.
-3. **Para aplicar cambios**:
-   - Cambia el interruptor en el Gestor.
-   - Sube **`usuarios.json`** a GitHub.
+1. **Uso en Local**: Haz clic derecho en `index.html` y selecciona **"Open with Live Server"**.
+2. **Detector Inteligente**: Si olvidas usar un servidor local, el sistema te mostrará una **guía visual en pantalla** explicándote qué hacer. ¡Ya no más mensajes de error genéricos!
 
 ---
 
-## 🔴 CASO 4: SI ALGO SE VE MAL (Mantenimiento)
+## 🔴 CASO 4: MANTENIMIENTO "CERO ERRORES"
 
-Si ves que el diseño está raro, desalineado o antiguo en los celulares:
-
-1. Asegúrate de tener la **última versión** de todos los archivos en tu PC (haz `git pull` o descarga lo último).
-2. **Sube nuevamente TODOS los archivos críticos**:
-   - `index.html`, `styles.css`, `script.js`, `auth.js`, `productos.json`.
-3. Esto forzará una "reparación" completa del sitio en la nube.
+Si algo no carga o se ve antiguo:
+1. **Verificación de Datos**: Ejecuta el sincronizador para regenerar el JSON con la limpieza profunda activada.
+2. **Sube archivos críticos**: Sube `index.html`, `scripts.js`, `styles.css` y `productos.json`.
+3. **Reporte Automático**: Si el error persiste, el sistema te generará un código de diagnóstico para resolverlo al instante.
 
 ---
-**Nota Final:** El sistema ahora tiene un "Anti-Caché Automático" y una "Memoria de 7 días" para novedades. Es vital subir `index.html` siempre para que el sistema sepa que hay información fresca.
+**Nota Final:** Tu sistema ahora es **Súper Inteligente**. Está diseñado para no fallar aunque cambies de sistema operativo o de hardware. ¡Disfruta de tu buscador al 1000%!

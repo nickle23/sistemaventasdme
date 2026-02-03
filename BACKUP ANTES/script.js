@@ -410,40 +410,18 @@ class ProductSearch {
     // ===== CARGA DE PRODUCTOS =====
     async loadProducts() {
         const startTime = performance.now();
-        const isLocalFile = window.location.protocol === 'file:';
 
         try {
-            // 1. INTELIGENCIA: Detectar si el usuario necesita ayuda con archivos locales
-            if (isLocalFile) {
-                console.warn('⚠️ Entorno Local Detectado (file://)');
-            }
-
-            // 2. Carga con reintentos y control de errores
-            let response;
-            try {
-                // Forzamos bust de caché con timestamp para asegurar datos frescos
-                response = await fetch(`./productos.json?v=${Date.now()}`);
-            } catch (fetchError) {
-                if (isLocalFile) {
-                    throw new Error("BLOQUEO DE SEGURIDAD LOCAL: Los navegadores modernos bloquean archivos locales. Por favor, usa 'Live Server' o sube a GitHub.");
-                } else {
-                    throw new Error(`Error de red: No se pudo conectar con el archivo de productos.`);
-                }
-            }
-
-            if (!response.ok) {
-                throw new Error(`Error del servidor: ${response.status} (${response.statusText})`);
-            }
+            // 1. Cargar archivo (ahora viene encriptado como texto plano)
+            const response = await fetch('./productos.json?v=' + Date.now()); // No caché
+            if (!response.ok) throw new Error('Error HTTP');
 
             const encryptedData = await response.text();
-            if (!encryptedData || encryptedData.length < 50) {
-                throw new Error("La base de datos parece estar vacía o corrupta.");
-            }
 
-            // 3. Desencriptación Robusta
+            // 2. Desencriptar
             try {
-                const SECRET_KEY = "MundoEscolar$2025_Seguro";
-                // Aseguramos que la clave tenga el padding correcto (32 bytes para AES-256)
+                // La clave debe coincidir exactamente con la de Python (32 chars)
+                const SECRET_KEY = "MundoEscolar$2025_Seguro"; // Clave pública en código (ofuscable)
                 const key = CryptoJS.enc.Utf8.parse(SECRET_KEY.padEnd(32, '\0'));
 
                 const decrypted = CryptoJS.AES.decrypt(encryptedData, key, {
@@ -453,72 +431,38 @@ class ProductSearch {
 
                 const jsonString = decrypted.toString(CryptoJS.enc.Utf8);
 
-                if (!jsonString) {
-                    throw new Error("ERROR DE LLAVE: Los datos no pudieron ser desencriptados.");
-                }
+                if (!jsonString) throw new Error("Fallo de desencriptación (clave incorrecta o archivo dañado)");
 
                 const data = JSON.parse(jsonString);
 
-                // 4. Adaptabilidad de Formato (Soporte para versiones antiguas y nuevas)
+                // Soporte RETROCOMPATIBLE (Arrays antiguos vs Objeto nuevo)
                 if (Array.isArray(data)) {
                     this.products = data;
-                } else if (data && data.products) {
+                } else if (data.products && Array.isArray(data.products)) {
                     this.products = data.products;
-                    if (data.metadata?.last_updated) this.showUpdateDate(data.metadata.last_updated);
-                    if (data.changes) this.showChangesUI(data.changes);
+                    if (data.metadata && data.metadata.last_updated) {
+                        this.showUpdateDate(data.metadata.last_updated);
+                    }
+                    // NUEVO: Verificar cambios
+                    if (data.changes) {
+                        this.showChangesUI(data.changes);
+                    }
                 } else {
-                    throw new Error("FORMATO DESCONOCIDO: Los datos recibidos no son compatibles.");
+                    throw new Error("Formato de datos no reconocido");
                 }
 
             } catch (cryptoError) {
-                console.error("🔐 Error de Datos/Seguridad:", cryptoError);
-                throw new Error(`Fallo en el procesado: ${cryptoError.message}`);
+                console.error("🔐 Error de seguridad:", cryptoError);
+                throw new Error("No se pudo desencriptar la base de datos.");
             }
 
             const loadTime = performance.now() - startTime;
-            console.log(`🚀 Sistema Universal: ${this.products.length} productos listos en ${loadTime.toFixed(0)}ms`);
+            console.log(`✅ ${this.products.length} productos cargados y desencriptados en ${loadTime.toFixed(0)}ms`);
 
         } catch (error) {
-            console.error('❌ Error Crítico:', error);
-
-            // INTELIGENCIA: Mostrar ayuda visual específica según el error
-            this.showSmartError(error.message);
+            console.error('❌ Error cargando productos:', error);
             throw error;
         }
-    }
-
-    // NUEVO: Sistema de error inteligente para el usuario
-    showSmartError(message) {
-        this.currentState = 'error';
-        this.hideAllStates();
-        const errorElement = document.getElementById('errorMessage');
-        if (!errorElement) return;
-
-        const isLocal = window.location.protocol === 'file:';
-        let helpHTML = `
-            <div style="text-align: center; max-width: 400px; padding: 20px;">
-                <div style="font-size: 40px; margin-bottom: 15px;">🔍⚙️</div>
-                <h3 style="margin-bottom: 10px; color: #e11d48;">Error al Iniciar</h3>
-                <p style="font-size: 14px; margin-bottom: 20px; line-height: 1.5;">${message}</p>
-        `;
-
-        if (isLocal) {
-            helpHTML += `
-                <div style="background: #fff1f2; border-left: 4px solid #e11d48; padding: 12px; text-align: left; margin-bottom: 15px;">
-                    <strong style="display: block; font-size: 12px; color: #e11d48; margin-bottom: 4px;">SOLUCIÓN PARA LAPTOP:</strong>
-                    <p style="font-size: 12px; margin: 0;">Haz clic derecho en <b>index.html</b> y selecciona <b>"Open with Live Server"</b>.</p>
-                </div>
-            `;
-        }
-
-        helpHTML += `
-                <button onclick="location.reload()" style="background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px;">Reintentar</button>
-                <div style="margin-top: 15px; font-size: 10px; opacity: 0.6;">SISTEMA UNIVERSAL CON AUTODIAGNÓSTICO</div>
-            </div>
-        `;
-
-        errorElement.innerHTML = helpHTML;
-        errorElement.style.display = 'flex';
     }
 
     // ===== MOSTRAR FECHA DE ACTUALIZACIÓN =====
