@@ -46,12 +46,6 @@
       "date": "2025-12-19 09:16"
     },
     {
-      "id": "USR-PA7U-M9TJ",
-      "name": "ANGIE CEL",
-      "active": true,
-      "date": "2025-12-29 15:12"
-    },
-    {
       "id": "USR-W9A8-R6UF",
       "name": "JULLIANA CEL",
       "active": true,
@@ -128,7 +122,13 @@
       "name": "LENOVO NIXON",
       "active": true,
       "date": "2026-02-05 17:58"
+    },
+    {
+      "id": "USR-6UKN-MEVP",
+      "name": "LENOVO PRUEBAS",
+      "active": true,
+      "date": "2026-02-17 17:25"
     }
   ],
-  "last_updated": "2026-02-05T17:58:50.361711"
+  "last_updated": "2026-02-21T07:24:09.462174"
 }
