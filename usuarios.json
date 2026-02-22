@@ -128,7 +128,13 @@
       "name": "LENOVO PRUEBAS",
       "active": true,
       "date": "2026-02-17 17:25"
+    },
+    {
+      "id": "USR-XJ9M-5WNG",
+      "name": "MARIANA CEL",
+      "active": true,
+      "date": "2026-02-22 10:24"
     }
   ],
-  "last_updated": "2026-02-21T07:24:09.462174"
+  "last_updated": "2026-02-22T10:24:56.647337"
 }
