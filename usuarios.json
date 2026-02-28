@@ -134,8 +134,19 @@
       "name": "MARIANA CEL",
       "active": true,
       "date": "2026-02-22 10:24"
+    },
+    {
+      "id": "USR-8E34-RPTB",
+      "name": "CARLOS MEDINA",
+      "active": true,
+      "date": "2026-02-28 07:42"
+    },
+    {
+      "id": "USR-LTPL-Y4E3",
+      "name": "Angie Crederth",
+      "active": true,
+      "date": "2026-02-28 07:43"
     }
   ],
-  "last_updated": "2026-02-22T10:24:56.647337"
-
+  "last_updated": "2026-02-28T07:43:00.386978"
 }
