@@ -1,8 +1,20 @@
 import os
 import sys
 
+# Detectar si estamos ejecutando como EXE (PyInstaller) o como script
+if getattr(sys, 'frozen', False):
+    # Si es EXE, usar la carpeta donde está el ejecutable
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    # Si es script Python normal, usar la carpeta del script
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Cambiar al directorio correcto
+os.chdir(BASE_DIR)
+
 # 1. Mensaje de vida inmediato e IRRECHAZABLE
 print(">> SISTEMA INICIANDO... POR FAVOR ESPERA.", flush=True)
+print(f">> Carpeta de trabajo: {BASE_DIR}", flush=True)
 
 import json
 import time
@@ -22,25 +34,60 @@ if sys.platform == "win32":
     try: os.system('chcp 65001 > nul')
     except: pass
 
-# 2. Verificación inteligente de dependencias
+import subprocess
+
+# 2. Verificación inteligente de dependencias (AUTO-INSTALABLE)
 def verificar_librerias():
+    requeridas = {
+        "pandas": "pandas",
+        "watchdog": "watchdog",
+        "Crypto": "pycryptodome",
+        "openpyxl": "openpyxl"
+    }
+    
     faltantes = []
-    try: import pandas as pd
-    except ImportError: faltantes.append("pandas")
-    try: from watchdog.observers import Observer
-    except ImportError: faltantes.append("watchdog")
-    try: from Crypto.Cipher import AES
-    except ImportError: faltantes.append("pycryptodome")
+    
+    # Verificar pandas
+    try: import pandas
+    except ImportError: faltantes.append(requeridas["pandas"])
+    
+    # Verificar watchdog
+    try: import watchdog
+    except ImportError: faltantes.append(requeridas["watchdog"])
+    
+    # Verificar pycryptodome (Crypto)
+    try: import Crypto
+    except ImportError: faltantes.append(requeridas["Crypto"])
+    
+    # Verificar openpyxl
+    try: import openpyxl
+    except ImportError: faltantes.append(requeridas["openpyxl"])
     
     if faltantes:
         print("\n" + "!"*60)
-        print("ERROR: Faltan librerias necesarias.")
-        print(f"Instala esto: pip install {' '.join(faltantes)} openpyxl")
+        print(f"ATENCION: Faltan librerias ({', '.join(faltantes)}).")
+        print("Intentando instalacion automatica... por favor espera.")
         print("!"*60 + "\n")
-        time.sleep(5)
-        sys.exit(1)
+        
+        try:
+            for lib in faltantes:
+                print(f">> Instalando {lib}...")
+                subprocess.check_call([sys.executable, "-m", "pip", "install", lib])
+            print("\n" + "="*60)
+            print("EXITO: Librerias instaladas correctamente.")
+            print("Reiniciando el sistema...")
+            print("="*60 + "\n")
+            time.sleep(2)
+            # Reiniciar el script para cargar las nuevas librerías
+            os.execv(sys.executable, ['python'] + sys.argv)
+        except Exception as e:
+            print(f"\nERROR CRITICO: No se pudo instalar automaticamente: {e}")
+            print(f"Por favor, instala manualmente: pip install {' '.join(faltantes)}")
+            time.sleep(10)
+            sys.exit(1)
 
 verificar_librerias()
+
 import pandas as pd
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -59,8 +106,9 @@ except ImportError:
 
 class SincronizadorUniversal:
     def __init__(self):
-        # Rutas dinámicas basadas en la ubicación del script
-        self.base_path = os.path.dirname(os.path.abspath(__file__))
+        # Rutas dinámicas basadas en la ubicación del ejecutable/script
+        # BASE_DIR se define al inicio del archivo
+        self.base_path = BASE_DIR
         self.carpeta_excel = os.path.join(self.base_path, "excel")
         self.archivo_json = os.path.join(self.base_path, "productos.json")
         self.archivo_index = os.path.join(self.base_path, "index.html")
